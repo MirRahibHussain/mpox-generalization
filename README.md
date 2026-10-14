@@ -13,8 +13,26 @@ Also included: a perceptual-hash + embedding **duplicate audit** within and
 across datasets, an approximate **skin-tone (ITA) breakdown**, and
 **Grad-CAM** sheets for checking what the models look at.
 
-> **Status:** code complete; experiments not yet run. No results are reported
-> here until they come out of `scripts/06_summarize.py`.
+> **Status:** experiments complete (Kaggle, Tesla T4, 156 trainings in 155 min,
+> October 2026). Summary tables and the Grad-CAM ratings are in
+> `paper_results/`. Per-image predictions and split files are in the Kaggle
+> notebook output and will be published here. The paper is in preparation.
+
+## Results at a glance
+
+Binary task (mpox vs. non-mpox), balanced accuracy, mean over models.
+
+| Finding | Number |
+| --- | --- |
+| Duplicate pairs shared between MSID and MSLD v2.0 | 67 (plus 21 within the datasets) |
+| Inflation from a naive split (P1 − P2) | +1.9 points (MSID), +2.6 points (MSLD v2.0) |
+| Trained on MSID: own test (P2) → MSLD v2.0 (P3) | 0.919 → 0.688 |
+| Trained on MSLD v2.0: own test (P2) → MSID (P3) | 0.805 → 0.853 |
+| MSLD v2.0 images called mpox by MSID-trained models | cowpox 95.5%, chickenpox 76.1%, HFMD 51.4% |
+| Cross-dataset mpox sensitivity, dark vs. light skin (ITA) | 0.874 vs. 0.579 |
+| Grad-CAM peak on the lesion (83 rated maps) | 55 lesion, 19 mixed, 9 off-lesion |
+
+![Balanced accuracy by protocol](paper_results/fig1_protocols.png)
 
 ## Data
 
@@ -22,7 +40,7 @@ Both datasets are public and on Kaggle. Cite them if you use this code.
 
 | Dataset | Kaggle | Original source |
 | --- | --- | --- |
-| MSLD v2.0 (755 images, 541 patients, 6 classes) | `joydippaul/mpox-skin-lesion-dataset-version-20-msld-v20` | Ali et al., arXiv:2306.14169 (2023) |
+| MSLD v2.0 (755 images, 541 patients, 6 classes) | `joydippaul/mpox-skin-lesion-dataset-version-20-msld-v20` | Ali et al., Biomed. Signal Process. Control 98:106742 (2024); arXiv:2306.14169 |
 | MSID (4 classes) | `dipuiucse/monkeypoxskinimagedataset` | Bala & Hossain, Mendeley Data, doi:10.17632/r9bfpnvyxr.6 |
 
 Only original images are used; folders whose path contains `aug` are skipped
@@ -104,9 +122,10 @@ datasets above.
 
 ## Acknowledgment of AI assistance
 
-The code was drafted, and the Kaggle runs were set up and launched, with the
-help of an AI assistant (Claude, Anthropic). The author is responsible for the
-study and its results.
+An AI assistant (Claude, Anthropic) drafted the code, set up and launched the
+Kaggle runs, rated the Grad-CAM maps in `paper_results/gradcam_ratings.csv`,
+and drafted the manuscript. The author is responsible for the study and its
+results.
 
 ## License
 
