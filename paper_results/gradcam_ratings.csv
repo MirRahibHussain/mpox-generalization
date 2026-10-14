@@ -1,0 +1,94 @@
+run,image_id,file,kind,label,ita_band,attention,note
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:e08ac1e211ca,FN_msld_v2_e08ac1e211ca.png,FN,mpox,dark,off-lesion,"top-edge white object, lesion lower centre not hot"
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:63863a96f26e,FN_msld_v2_63863a96f26e.png,FN,mpox,light,lesion,lesion-bearing arm
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:5642b09a0fd4,FN_msld_v2_5642b09a0fd4.png,FN,mpox,intermediate,mixed,"one spot on wrinkled finger skin, one on lesion"
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:b594fac4d37d,FN_msld_v2_b594fac4d37d.png,FN,mpox,intermediate,mixed,hand/wrist plus right background edge
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:031b9cbad18d,FN_msld_v2_031b9cbad18d.png,FN,mpox,dark,lesion,perioral lesions
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:c3dd0f1143a6,FN_msld_v2_c3dd0f1143a6.png,FN,mpox,light,mixed,arm centre plus background corner/edge
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:c1c56540ee40,FP_msld_v2_c1c56540ee40.png,FP,chickenpox,light,lesion,pustule
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:85a7c935ca41,FP_msld_v2_85a7c935ca41.png,FP,cowpox,dark,lesion,necrotic lesion
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:c36019b0ea4c,FP_msld_v2_c36019b0ea4c.png,FP,chickenpox,intermediate,lesion,pustule
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:a962ef114e01,FP_msld_v2_a962ef114e01.png,FP,hfmd,intermediate,mixed,hands plus toy and striped clothing
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:2f02b517f11c,FP_msld_v2_2f02b517f11c.png,FP,cowpox,light,lesion,crusted lesion
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:ce673f46b3f7,FP_msld_v2_ce673f46b3f7.png,FP,hfmd,intermediate,lesion,oral vesicles
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:345ea489628b,TN_msld_v2_345ea489628b.png,TN,chickenpox,intermediate,mixed,"lips/chin, papules elsewhere"
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:a27458bd9276,TN_msld_v2_a27458bd9276.png,TN,chickenpox,intermediate,lesion,lesion-bearing flank (diffuse rash)
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:fcd6bccd6ceb,TN_msld_v2_fcd6bccd6ceb.png,TN,hfmd,light,mixed,edge of foot near papules
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:c40bdf81dc54,TN_msld_v2_c40bdf81dc54.png,TN,healthy,light,n/a (healthy),"healthy; hand on hip, no visible lesion"
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:2da486b2e0ac,TN_msld_v2_2da486b2e0ac.png,TN,healthy,dark,n/a (healthy),"healthy; chin/neck, stock photo, no visible lesion"
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:0ea549a91125,TN_msld_v2_0ea549a91125.png,TN,hfmd,light,lesion,palm rash
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:3f7974a94899,TP_msld_v2_3f7974a94899.png,TP,mpox,intermediate,lesion,umbilicated lesions on hand
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:3f5237fcbf7f,TP_msld_v2_3f5237fcbf7f.png,TP,mpox,intermediate,lesion,two pustules
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:362d117d6a77,TP_msld_v2_362d117d6a77.png,TP,mpox,dark,lesion,next to single lesion (plus faint vertical band)
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:6a2ca40937b1,TP_msld_v2_6a2ca40937b1.png,TP,mpox,intermediate,lesion,umbilicated lesion
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:e9a2964856bb,TP_msld_v2_e9a2964856bb.png,TP,mpox,light,lesion,lower lesion
+binary_P3_msid_to_msld_v2_rep0/resnet50,msld_v2:599b226e2be2,TP_msld_v2_599b226e2be2.png,TP,mpox,dark,lesion,small lesion
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:acfccf7d9b05,FN_msid_acfccf7d9b05.png,FN,mpox,light,lesion,lesion-bearing chest/arm (diffuse rash)
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:64ab7034dc5a,FN_msid_64ab7034dc5a.png,FN,mpox,light,lesion,vesicles
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:9df16a50683c,FN_msid_9df16a50683c.png,FN,mpox,dark,mixed,nose lesion plus black censor bar
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:dd3e6cd64b25,FN_msid_dd3e6cd64b25.png,FN,mpox,intermediate,lesion,lesion-bearing back (diffuse rash)
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:8263aa6ed32d,FN_msid_8263aa6ed32d.png,FN,mpox,intermediate,lesion,blister margin
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:7fb1ce7a24de,FN_msid_7fb1ce7a24de.png,FN,mpox,intermediate,mixed,lesion plus ring/white object
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:0f91a4a2dec8,FP_msid_0f91a4a2dec8.png,FP,chickenpox,intermediate,mixed,"one spot near papule, one at left image edge/sheet"
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:7001b7cb32e6,FP_msid_7001b7cb32e6.png,FP,chickenpox,light,lesion,lesion-bearing trunk (stock watermark present)
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:8b2f8db0ab77,FP_msid_8b2f8db0ab77.png,FP,chickenpox,dark,lesion,papules
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:9936e1bc93a8,FP_msid_9936e1bc93a8.png,FP,chickenpox,light,lesion,scabbed papule
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:e3681009b04d,FP_msid_e3681009b04d.png,FP,chickenpox,light,lesion,near small papules
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:5565016ea45c,FP_msid_5565016ea45c.png,FP,measles,dark,mixed,arm edge plus dark background gap
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:c8ec8833c6e0,TN_msid_c8ec8833c6e0.png,TN,measles,light,lesion,petechial forearm rash
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:245d3d385465,TN_msid_245d3d385465.png,TN,healthy,light,n/a (healthy),"healthy; hand on hip, stock photo, no visible lesion"
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:9f720b8ae7ca,TN_msid_9f720b8ae7ca.png,TN,healthy,dark,n/a (healthy),"healthy; back of hands, no visible lesion at peak"
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:e5d5a7a7c05d,TN_msid_e5d5a7a7c05d.png,TN,chickenpox,light,lesion,papule cluster
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:3774edc16a7c,TN_msid_3774edc16a7c.png,TN,chickenpox,light,lesion,rash on upper back below hairline
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:b8fe0c5956d2,TN_msid_b8fe0c5956d2.png,TN,healthy,light,n/a (healthy),"healthy; hands holding foot, stock photo, no visible lesion"
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:9b41dcfca786,TP_msid_9b41dcfca786.png,TP,mpox,light,lesion,two pustules
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:0a151112ad7d,TP_msid_0a151112ad7d.png,TP,mpox,intermediate,lesion,blister margin
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:ba9b3ce0bc6a,TP_msid_ba9b3ce0bc6a.png,TP,mpox,dark,lesion,lesion-bearing back (dark skin)
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:e4661a35342b,TP_msid_e4661a35342b.png,TP,mpox,intermediate,lesion,lesion cluster on shoulder
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:c93a16fb37a1,TP_msid_c93a16fb37a1.png,TP,mpox,dark,lesion,papules
+binary_P3_msld_v2_to_msid_rep0/resnet50,msid:64e5e528b695,TP_msid_64e5e528b695.png,TP,mpox,intermediate,lesion,lesion-bearing leg (some bed surface)
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:c3dd0f1143a6,FN_msld_v2_c3dd0f1143a6.png,FN,mpox,light,mixed,"top edge near papules, lower arm, background right"
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:8f81d143fa10,FN_msld_v2_8f81d143fa10.png,FN,mpox,intermediate,off-lesion,"left edge skin, away from red streak and papules"
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:2886fb4997c5,FN_msld_v2_2886fb4997c5.png,FN,mpox,light,lesion,diffuse rash skin (top and bottom bands)
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:6de472f6962a,FP_msld_v2_6de472f6962a.png,FP,cowpox,intermediate,lesion,necrotic lesion centre
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:a821f511b983,FP_msld_v2_a821f511b983.png,FP,chickenpox,light,mixed,right image edge near one brown crust
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:c581eae1d6c7,FP_msld_v2_c581eae1d6c7.png,FP,chickenpox,light,lesion,vesicles (several small peaks)
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:8ad614bdbc03,FP_msld_v2_8ad614bdbc03.png,FP,cowpox,dark,lesion,nose lesion area
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:c36019b0ea4c,FP_msld_v2_c36019b0ea4c.png,FP,chickenpox,intermediate,lesion,pustule and skin to its right
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:ce673f46b3f7,FP_msld_v2_ce673f46b3f7.png,FP,hfmd,intermediate,lesion,oral vesicles
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:894078d479d7,TN_msld_v2_894078d479d7.png,TN,healthy,light,n/a (healthy),healthy
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:0e7424ba09e1,TN_msld_v2_0e7424ba09e1.png,TN,hfmd,intermediate,mixed,"adult hand holding leg, spotted leg"
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:5f4b0168baeb,TN_msld_v2_5f4b0168baeb.png,TN,measles,light,lesion,diffuse measles rash
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:fbe45bdcf52f,TN_msld_v2_fbe45bdcf52f.png,TN,healthy,light,n/a (healthy),healthy
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:ca190007cb98,TN_msld_v2_ca190007cb98.png,TN,hfmd,dark,lesion,papules on foot
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:5df28e3c7b67,TN_msld_v2_5df28e3c7b67.png,TN,healthy,intermediate,n/a (healthy),healthy
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:fc8b69895c34,TP_msld_v2_fc8b69895c34.png,TP,mpox,light,lesion,papules
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:aba9c8d07301,TP_msld_v2_aba9c8d07301.png,TP,mpox,dark,lesion,lesion at beard edge
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:4c0df60c8355,TP_msld_v2_4c0df60c8355.png,TP,mpox,dark,lesion,umbilicated lesion cluster
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:94c6a5bd524a,TP_msld_v2_94c6a5bd524a.png,TP,mpox,dark,lesion,knuckle papule
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:90a3e9ff8d77,TP_msld_v2_90a3e9ff8d77.png,TP,mpox,dark,lesion,ulcerated lesion
+binary_P3_msid_to_msld_v2_rep0/convnext_tiny,msld_v2:4ab5f0235a63,TP_msld_v2_4ab5f0235a63.png,TP,mpox,intermediate,lesion,crusted finger lesion
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:862d97220ab1,FN_msid_862d97220ab1.png,FN,mpox,light,mixed,"bottom-left image border, sparse papules"
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:40f3c69024f4,FN_msid_40f3c69024f4.png,FN,mpox,light,mixed,magnifier rim plus lesion skin (drawn illustration)
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:3f44ca9e4f96,FN_msid_3f44ca9e4f96.png,FN,mpox,light,mixed,fingertip plus single papule (stock-style photo)
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:c1daee3bf8d2,FN_msid_c1daee3bf8d2.png,FN,mpox,light,off-lesion,"eye, rash on cheek not hot"
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:07ac56821423,FN_msid_07ac56821423.png,FN,mpox,dark,off-lesion,head/hair (illustration with Spanish text labels)
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:83815767ade9,FN_msid_83815767ade9.png,FN,mpox,dark,lesion,inflamed eye/conjunctiva (ocular involvement)
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:fbe640014a12,FP_msid_fbe640014a12.png,FP,chickenpox,light,lesion,vesicles (Getty watermark not hot)
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:8b2f8db0ab77,FP_msid_8b2f8db0ab77.png,FP,chickenpox,dark,lesion,papule
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:e28e0ad611c0,FP_msid_e28e0ad611c0.png,FP,chickenpox,light,mixed,lower-right edge of papule cluster
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:cb248768f9ea,FP_msid_cb248768f9ea.png,FP,measles,dark,off-lesion,"navel, no visible rash"
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:10224554cdee,FP_msid_10224554cdee.png,FP,chickenpox,light,lesion,vesicle
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:fee5487bc3bf,FP_msid_fee5487bc3bf.png,FP,measles,dark,mixed,"next to navel, diffuse fine rash"
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:3e24f153e1f9,TN_msid_3e24f153e1f9.png,TN,healthy,light,n/a (healthy),healthy
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:1fee975d0041,TN_msid_1fee975d0041.png,TN,chickenpox,light,off-lesion,"pinching fingers, papules nearby not hot"
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:93463b4b8bf2,TN_msid_93463b4b8bf2.png,TN,chickenpox,light,off-lesion,"face of child, lesions on body (calamine) not hot"
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:a035158d3bae,TN_msid_a035158d3bae.png,TN,healthy,light,n/a (healthy),healthy
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:82398d99a9ff,TN_msid_82398d99a9ff.png,TN,measles,intermediate,mixed,"lips/mouth, rash on cheeks and chin"
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:439a8d5b14fe,TN_msid_439a8d5b14fe.png,TN,measles,intermediate,off-lesion,end of black censor bar / temple
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:97140fec3032,TP_msid_97140fec3032.png,TP,mpox,light,lesion,umbilicated papule
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:eac6727b04f9,TP_msid_eac6727b04f9.png,TP,mpox,dark,lesion,single papule on dark skin
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:453f0d321490,TP_msid_453f0d321490.png,TP,mpox,light,off-lesion,"top-right background, hand lesions not hot (tattoo present)"
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:7681511edd8d,TP_msid_7681511edd8d.png,TP,mpox,dark,lesion,lesion-bearing hand (two-photo collage)
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:0bd03002c360,TP_msid_0bd03002c360.png,TP,mpox,dark,lesion,lesion-bearing head/back (dark skin)
+binary_P3_msld_v2_to_msid_rep0/convnext_tiny,msid:302a6170c2fc,TP_msid_302a6170c2fc.png,TP,mpox,dark,lesion,vesicles
