@@ -39,8 +39,10 @@ def seed_everything(seed: int) -> None:
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True
+    # Fixed seeds, but cuDNN autotuning on for speed: GPU results can differ
+    # very slightly between repeated runs.
+    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.deterministic = False
 
 
 class ImageTable(Dataset):
@@ -116,11 +118,12 @@ def run(spec: dict, images: pd.DataFrame, model_name: str, seed: int, out_dir: P
 
     g = torch.Generator()
     g.manual_seed(seed)
+    keep = num_workers > 0  # keep worker processes alive across epochs
     dl_tr = DataLoader(ImageTable(p_tr, y_tr, tf_train), batch_size=batch_size, shuffle=True,
                        num_workers=num_workers, pin_memory=True, drop_last=len(p_tr) > batch_size,
-                       generator=g)
+                       generator=g, persistent_workers=keep)
     dl_va = DataLoader(ImageTable(p_va, y_va, tf_test), batch_size=batch_size,
-                       num_workers=num_workers, pin_memory=True)
+                       num_workers=num_workers, pin_memory=True, persistent_workers=keep)
     dl_te = DataLoader(ImageTable(p_te, y_te, tf_test), batch_size=batch_size,
                        num_workers=num_workers, pin_memory=True)
 
