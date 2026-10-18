@@ -14,6 +14,7 @@ KEYS = {
     "MSLD": ("msld", "mpox-skin-lesion"),
     "MSID": ("monkeypoxskinimage", "msid", "monkeypox-skin-image"),
 }
+OPTIONAL = {"FITZ": ("fitzpatrick17k",)}  # look-alike pool for the method study
 
 
 def find(top: str, keywords, max_depth: int = 4):
@@ -36,6 +37,9 @@ def main():
         if not hits:
             sys.exit(f"Could not find the {var} dataset under {a.input}. Add it as notebook input.")
         print(f"{var}={shlex.quote(hits[0])}")
+    for var, kws in OPTIONAL.items():
+        hits = find(a.input, kws)
+        print(f"{var}={shlex.quote(hits[0]) if hits else ''}")
 
 
 if __name__ == "__main__":

@@ -62,6 +62,28 @@ and augmentation is applied inside training folds only.
 4. **Step-by-step instead:** import `notebooks/kaggle_run.ipynb`
    (File → Import Notebook), set `REPO_URL`, and run the cells in order.
 
+## Method study: TALE (in progress)
+
+TALE (Tone-Aware Look-alike Exposure) targets the two failures found above:
+
+- look-alike exposure: about 1,200 images of 24 papulovesicular, pustular, bullous or crusted
+  conditions from Fitzpatrick17k are added as extra non-mpox training images (never used for
+  validation or testing; duplicates of study images removed);
+- tone-balanced sampling: every (class, skin-tone band) group is drawn equally often;
+- tone-shift augmentation: the healthy skin around a lesion is moved to a random ITA band
+  while the lesion is left unchanged.
+
+It is compared with standard fine-tuning, hue/saturation jitter, mixup and Group DRO, plus
+ablations, on the same splits (`src/mpoxgen/methods.py`, `scripts/08`-`10`). On Kaggle, add
+the Fitzpatrick17k images (e.g. `mobaswiralfarabi/fitzpatrick17k-original`) as a third input
+and run:
+
+```
+!git clone -q https://github.com/MirRahibHussain/mpox-generalization.git && bash mpox-generalization/run_methods.sh
+```
+
+`python tests/run_method_checks.py` checks the method code on synthetic images.
+
 ## Pipeline
 
 ```bash
