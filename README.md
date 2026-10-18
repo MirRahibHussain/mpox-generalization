@@ -62,21 +62,36 @@ and augmentation is applied inside training folds only.
 4. **Step-by-step instead:** import `notebooks/kaggle_run.ipynb`
    (File → Import Notebook), set `REPO_URL`, and run the cells in order.
 
-## Method study: TALE (in progress)
+## Method study: TALE
 
 TALE (Tone-Aware Look-alike Exposure) targets the two failures found above:
 
-- look-alike exposure: about 1,200 images of 24 papulovesicular, pustular, bullous or crusted
+- look-alike exposure: 1,195 images of 24 papulovesicular, pustular, bullous or crusted
   conditions from Fitzpatrick17k are added as extra non-mpox training images (never used for
   validation or testing; duplicates of study images removed);
 - tone-balanced sampling: every (class, skin-tone band) group is drawn equally often;
 - tone-shift augmentation: the healthy skin around a lesion is moved to a random ITA band
   while the lesion is left unchanged.
 
-It is compared with standard fine-tuning, hue/saturation jitter, mixup and Group DRO, plus
-ablations, on the same splits (`src/mpoxgen/methods.py`, `scripts/08`-`10`). On Kaggle, add
-the Fitzpatrick17k images (e.g. `mobaswiralfarabi/fitzpatrick17k-original`) as a third input
-and run:
+It is compared with standard fine-tuning (ERM), hue/saturation jitter, mixup and Group DRO, plus
+two ablations, on the same cross-dataset splits (ResNet-50, EfficientNet-B0, ViT-Small/16;
+3 seeds per direction; Kaggle, Tesla T4, 186 trainings in 331 min, 18 October 2026).
+
+| Balanced accuracy (P3), mean of 9 runs | MSID → MSLD v2.0 | MSLD v2.0 → MSID |
+| --- | --- | --- |
+| ERM | 0.703 | 0.859 |
+| Colour jitter / Mixup / Group DRO | 0.706 / 0.714 / 0.691 | 0.863 / 0.837 / 0.852 |
+| Look-alike exposure only | 0.755 | 0.849 |
+| Tone balancing + tone shift only | 0.695 | 0.846 |
+| **TALE** | **0.749** (8 of 9 runs better than ERM, p = 0.008) | 0.837 |
+
+In the harder direction TALE cut the share of hand, foot and mouth disease images called mpox
+from 45% to 19%. The ablation shows that the look-alike images produce the gain; the skin-tone
+components did not meaningfully narrow the dark-versus-light sensitivity gap. Full tables, per-run results
+and statistics are in `paper_results/tale/`.
+
+Code: `src/mpoxgen/methods.py`, `src/mpoxgen/external.py`, `scripts/08`-`10`. On Kaggle, add the
+Fitzpatrick17k images (e.g. `mobaswiralfarabi/fitzpatrick17k-original`) as a third input and run:
 
 ```
 !git clone -q https://github.com/MirRahibHussain/mpox-generalization.git && bash mpox-generalization/run_methods.sh
@@ -144,7 +159,8 @@ datasets above.
 
 ## Acknowledgment of AI assistance
 
-An AI assistant (Claude, Anthropic) drafted the code, set up and launched the
+An AI assistant (Claude, Anthropic) drafted the code, designed and implemented
+the TALE method after the author chose its direction, set up and launched the
 Kaggle runs, rated the Grad-CAM maps in `paper_results/gradcam_ratings.csv`,
 and drafted the manuscript. The author is responsible for the study and its
 results.
