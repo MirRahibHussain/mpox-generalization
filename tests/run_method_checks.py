@@ -74,7 +74,8 @@ def check_sampling():
     w = balanced_weights(g)
     totals = pd.Series(w).groupby(g).sum()
     assert np.allclose(totals, totals.iloc[0]), "every group should carry the same total weight"
-    assert set(CONFIGS) == {"erm", "hsv", "mixup", "gdro", "la", "tone", "tale"}
+    assert set(CONFIGS) == {"erm", "hsv", "mixup", "gdro", "la", "rand", "tone", "tale"}
+    assert CONFIGS["rand"]["extra"] == "control" and CONFIGS["la"]["extra"] == "lookalike"
 
 
 def build_fake_fitz(base: Path, msld_img: Path):
@@ -125,7 +126,8 @@ def main():
         run(["scripts/04_make_splits.py", "--index", "data/index", "--out", "splits",
              "--reps", "2", "--cross-seeds", "2"], work)
         out = run(["scripts/08_lookalike_pool.py", "--fitz", str(fitz_root), "--csv", str(csv),
-                   "--index", "data/index", "--out", "data/pool", "--per-condition", "8"], work)
+                   "--index", "data/index", "--out", "data/pool", "--per-condition", "8",
+                   "--control-out", "data/pool_control"], work)
         pool = pd.read_csv(work / "data/pool/pool.csv")
         assert set(pool["condition"]) <= set(external.LOOKALIKE_CONDITIONS), "non-look-alike condition in pool"
         assert "psoriasis" not in set(pool["condition"])
@@ -135,6 +137,16 @@ def main():
         assert pool["ita_band"].notna().all()
         assert (work / "data/pool/tone_shift_examples.png").exists()
         print(f"pool: {len(pool)} images; planted duplicate removed")
+        ctl = pd.read_csv(work / "data/pool_control/pool.csv")
+        assert len(ctl) > 0 and len(ctl) <= len(pool)
+        assert not set(ctl["condition"]) & set(external.LOOKALIKE_CONDITIONS), "look-alike condition in control pool"
+        assert not set(ctl["md5"]) & set(pool["md5"]), "control pool overlaps the look-alike pool"
+        lim = pool["fitzpatrick"].value_counts()
+        assert all(n <= lim.get(f, 0) for f, n in ctl["fitzpatrick"].value_counts().items()), "Fitzpatrick mix exceeds target"
+        print(f"control pool: {len(ctl)} images from {ctl['condition'].nunique()} non-look-alike condition(s)")
+        run(["scripts/12_tone_shift_check.py", "--index", "data/index", "--out", "results_methods",
+             "--per-group", "4"], work)
+        assert (work / "results_methods/tone_shift_check.md").exists()
 
         # Fake runs for every method to exercise 10_summarize_methods.py.
         images = pd.read_csv(work / "data/index/images.csv")
@@ -145,6 +157,8 @@ def main():
             lab = images.set_index("image_id").loc[spec["test"], "label"]
             y = np.array([task_target(l, "binary") for l in lab])
             meths = list(CONFIGS) if r.protocol == "P3" else ["erm", "tale"]
+            vlab = images.set_index("image_id").loc[spec["val"], "label"]
+            yv = np.array([task_target(l, "binary") for l in vlab])
             for model in ("modelA", "modelB"):
                 for meth in meths:
                     prob = RNG.dirichlet(np.ones(2), len(y))
@@ -153,11 +167,18 @@ def main():
                     pr = pd.DataFrame({"image_id": spec["test"], "y_true": y, "y_pred": prob.argmax(1),
                                        "p0": prob[:, 0], "p1": prob[:, 1]})
                     pr.to_csv(d / "predictions.csv", index=False)
+                    pv = RNG.dirichlet(np.ones(2), len(yv))
+                    pd.DataFrame({"image_id": spec["val"], "y_true": yv, "y_pred": pv.argmax(1),
+                                  "p0": pv[:, 0], "p1": pv[:, 1]}).to_csv(d / "val_predictions.csv", index=False)
                     rec = {"protocol": r.protocol, "task": "binary", "rep": int(r.rep),
                            "train_dataset": r.train_dataset, "test_dataset": r.test_dataset,
                            "model": model, "method": meth, **metrics.compute(y, prob, 1)}
                     (d / "metrics.json").write_text(json.dumps(rec))
         run(["scripts/10_summarize_methods.py", "--results", "results_methods", "--index", "data/index"], work)
+        run(["scripts/11_operating_points.py", "--results", "results_methods"], work)
+        op = pd.read_csv(work / "results_methods/operating_points_runs.csv")
+        assert (op["val_sens_val90"] >= 0.9 - 1e-9).all(), "validation threshold misses the 90% sensitivity target"
+        assert set(op["method"]) == set(CONFIGS)
         for f in ("methods_tables.md", "table_p3_methods.csv", "table_tone_methods.csv",
                   "table_called_mpox_methods.csv", "table_p2_methods.csv", "table_tests.csv", "fig_methods.png"):
             assert (work / "results_methods" / f).exists(), f

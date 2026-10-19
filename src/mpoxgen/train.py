@@ -208,9 +208,11 @@ def run_method(spec: dict, images: pd.DataFrame, model_name: str, seed: int, out
                pretrained: bool = True) -> dict:
     """Like ``run`` but with one of the training methods in ``methods.CONFIGS``.
 
-    ``images`` needs an ``ita_band`` column. ``extra`` holds the look-alike pool
-    (label "other"); it is added to the training set only when the method asks
-    for it, and never to validation or test.
+    ``images`` needs an ``ita_band`` column. ``extra`` holds the auxiliary pool
+    for the method (look-alike or control, label "other"); it is added to the
+    training set only when the method asks for it, and never to validation or
+    test. Validation predictions of the best model are saved too, so decision
+    thresholds can be chosen on validation data (scripts/11_operating_points.py).
     """
     from torch.utils.data import WeightedRandomSampler
 
@@ -228,7 +230,7 @@ def run_method(spec: dict, images: pd.DataFrame, model_name: str, seed: int, out
     n_extra = 0
     if cfg["extra"]:
         if extra is None or extra.empty:
-            raise ValueError(f"method {method} needs the look-alike pool")
+            raise ValueError(f"method {method} needs the {cfg['extra']} pool")
         table = pd.concat([images, extra[[c for c in images.columns if c in extra.columns]]],
                           ignore_index=True)
         train_ids += list(extra["image_id"])
@@ -237,7 +239,7 @@ def run_method(spec: dict, images: pd.DataFrame, model_name: str, seed: int, out
 
     tf_train, tf_test = transforms(size, cfg["aug"])
     _, p_tr, y_tr = _rows(table, train_ids, task)
-    _, p_va, y_va = _rows(table, spec["val"], task)
+    id_va, p_va, y_va = _rows(table, spec["val"], task)
     id_te, p_te, y_te = _rows(table, spec["test"], task)
     g_tr = group_ids(y_tr, band.loc[train_ids].to_numpy())
 
@@ -312,6 +314,11 @@ def run_method(spec: dict, images: pd.DataFrame, model_name: str, seed: int, out
     for c in range(n_cls):
         pred[f"p{c}"] = pt[:, c]
     pred.to_csv(out_dir / "predictions.csv", index=False)
+    yv, pv = _predict(model, dl_va, device)
+    vpred = pd.DataFrame({"image_id": id_va, "y_true": yv, "y_pred": pv.argmax(1)})
+    for c in range(n_cls):
+        vpred[f"p{c}"] = pv[:, c]
+    vpred.to_csv(out_dir / "val_predictions.csv", index=False)
     pd.DataFrame(history).to_csv(out_dir / "history.csv", index=False)
     record = {
         "protocol": spec["protocol"], "task": task, "rep": spec["rep"],

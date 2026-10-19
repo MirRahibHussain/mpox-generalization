@@ -14,8 +14,9 @@ import pandas as pd
 
 NAMES = {"erm": "ERM (standard fine-tuning)", "hsv": "Colour jitter (hue/saturation)",
          "mixup": "Mixup", "gdro": "Group DRO", "la": "Look-alike exposure only",
-         "tone": "Tone balancing + tone shift only", "tale": "TALE (proposed)"}
-ORDER = ["erm", "hsv", "mixup", "gdro", "la", "tone", "tale"]
+         "tone": "Tone balancing + tone shift only", "tale": "TALE (proposed)",
+         "rand": "Random-negative control"}
+ORDER = ["erm", "hsv", "mixup", "gdro", "la", "rand", "tone", "tale"]
 DIRS = {"msid->msld_v2": "MSID → MSLD v2.0", "msld_v2->msid": "MSLD v2.0 → MSID"}
 
 
@@ -95,7 +96,8 @@ def figure(p3, out_png):
         ax.bar(x + (k - 0.5) * 0.38, mu, 0.36, yerr=sd, color=c, label=DIRS[d],
                error_kw={"elinewidth": 0.7, "capsize": 1.5, "ecolor": "#555"})
     ax.set_xticks(x, [NAMES[m].split(" (")[0].replace("Tone balancing + tone shift only", "Tone only")
-                      .replace("Look-alike exposure only", "Look-alike only") for m in meths],
+                      .replace("Look-alike exposure only", "Look-alike only")
+                      .replace("Random-negative control", "Random negatives") for m in meths],
                   rotation=20, ha="right", fontsize=7)
     ax.set_ylim(0.5, 1.0)
     ax.set_ylabel("Balanced accuracy (P3)", fontsize=7.5)
@@ -187,17 +189,16 @@ def main():
     key = ["direction", "model", "rep"]
     piv = p3.pivot_table(index=key, columns="method", values="balanced_accuracy")
     rows = []
-    for ref in ["tale", "la", "tone"]:
-        if ref not in piv:
+    pairs_ = [(r, m) for r in ["tale", "la", "tone", "rand"] for m in meths
+              if m != r and (r == "tale" or m == "erm")] + [("la", "rand")]
+    for ref, m in pairs_:
+        if ref not in piv or m not in piv:
             continue
-        for m in meths:
-            if m == ref or (ref != "tale" and m != "erm"):
-                continue
-            pr = piv[[ref, m]].dropna()
-            rows.append({"Comparison": f"{NAMES[ref]} vs {NAMES[m]}", "pairs": len(pr),
-                         "mean diff": f"{(pr[ref] - pr[m]).mean():+.3f}",
-                         "wins": int((pr[ref] > pr[m]).sum()),
-                         "Wilcoxon p": f"{wilcoxon(pr[ref], pr[m]):.4f}"})
+        pr = piv[[ref, m]].dropna()
+        rows.append({"Comparison": f"{NAMES[ref]} vs {NAMES[m]}", "pairs": len(pr),
+                     "mean diff": f"{(pr[ref] - pr[m]).mean():+.3f}",
+                     "wins": int((pr[ref] > pr[m]).sum()),
+                     "Wilcoxon p": f"{wilcoxon(pr[ref], pr[m]):.4f}"})
     tF = pd.DataFrame(rows)
     tF.to_csv(res / "table_tests.csv", index=False)
     text += ["## Paired Wilcoxon signed-rank tests (P3 balanced accuracy)", md_table(tF), ""]

@@ -8,6 +8,9 @@
 3. Estimate ITA for every pool image.
 4. Draw two contact sheets for checking by eye: pool examples, and the
    tone-shift augmentation applied to study images.
+5. With --control-out, also build the control pool for the "rand" method: the
+   same number of images with the same Fitzpatrick-type mix, from conditions
+   that are not look-alikes, checked for duplicates in the same way.
 
     python scripts/08_lookalike_pool.py --fitz /kaggle/input/fitzpatrick17k-original \
         --csv fitzpatrick17k.csv --index data/index --out data/pool
@@ -61,26 +64,8 @@ def sheet(cells, cols, out_png, side=150, label_h=16):
     canvas.save(out_png)
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--fitz", required=True, help="Fitzpatrick17k image folder (md5-named jpgs)")
-    ap.add_argument("--csv", required=True, help="fitzpatrick17k.csv")
-    ap.add_argument("--index", default="data/index")
-    ap.add_argument("--out", default="data/pool")
-    ap.add_argument("--per-condition", type=int, default=50)
-    ap.add_argument("--max-dist", type=int, default=6)
-    ap.add_argument("--cos", type=float, default=0.92)
-    ap.add_argument("--seed", type=int, default=0)
-    a = ap.parse_args()
-    out = Path(a.out)
-    out.mkdir(parents=True, exist_ok=True)
-    main_img = pd.read_csv(Path(a.index) / "images.csv")
-
-    pool = external.build_pool(a.fitz, a.csv, a.per_condition, seed=a.seed)
-    n0 = len(pool)
-    print(f"Sampled {n0} look-alike images from {pool['condition'].nunique()} conditions")
-
-    # Duplicates of study images (and inside the pool) by perceptual hash.
+def remove_duplicates(pool, main_img, a, emb_file, f_main=None):
+    """Drop pool images that duplicate a study image (or each other)."""
     both = pd.concat([main_img[["image_id", "dataset", "path", "label"]],
                       pool[["image_id", "dataset", "path", "label"]]], ignore_index=True)
     hashes = dedup.compute_hashes(both, verbose=False)
@@ -91,22 +76,43 @@ def main():
     drop = set(cross["a"]) | set(cross["b"])
     within = pairs[(pairs["dataset_a"] == "fitz17k") & (pairs["dataset_b"] == "fitz17k")]
     drop |= set(within["b"])  # keep the first image of each within-pool pair
-    n_hash_cross = int(pool["image_id"].isin(drop).sum())
-
-    # Edited copies of study images by embedding similarity.
-    emb_file = Path(a.index) / "embeddings.npy"
+    n_hash = int(pool["image_id"].isin(drop).sum())
     n_emb = 0
-    try:
+    try:  # embeddings are a second line of defence; hashes already ran
         f_pool = embed(pool["path"].tolist())
-        f_main = np.load(emb_file) if emb_file.exists() else embed(main_img["path"].tolist())
-        sim = f_pool @ f_main.T
-        hit = sim.max(1) >= a.cos
+        if f_main is None:
+            f_main = np.load(emb_file) if emb_file.exists() else embed(main_img["path"].tolist())
+        hit = (f_pool @ f_main.T).max(1) >= a.cos
         n_emb = int(hit.sum())
         drop |= set(pool.loc[hit, "image_id"])
-    except Exception as e:  # embeddings are a second line of defence; hashes already ran
+    except Exception as e:
         print(f"[warn] embedding check skipped: {e}")
-    pool = pool[~pool["image_id"].isin(drop)].reset_index(drop=True)
+    return pool[~pool["image_id"].isin(drop)].reset_index(drop=True), n_hash, n_emb, f_main
 
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--fitz", required=True, help="Fitzpatrick17k image folder (md5-named jpgs)")
+    ap.add_argument("--csv", required=True, help="fitzpatrick17k.csv")
+    ap.add_argument("--index", default="data/index")
+    ap.add_argument("--out", default="data/pool")
+    ap.add_argument("--per-condition", type=int, default=50)
+    ap.add_argument("--max-dist", type=int, default=6)
+    ap.add_argument("--cos", type=float, default=0.92)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--control-out", default="", help="also build the matched control pool here")
+    a = ap.parse_args()
+    out = Path(a.out)
+    out.mkdir(parents=True, exist_ok=True)
+    main_img = pd.read_csv(Path(a.index) / "images.csv")
+
+    pool = external.build_pool(a.fitz, a.csv, a.per_condition, seed=a.seed)
+    n0 = len(pool)
+    print(f"Sampled {n0} look-alike images from {pool['condition'].nunique()} conditions")
+
+    f_main = None
+    emb_file = Path(a.index) / "embeddings.npy"
+    pool, n_hash_cross, n_emb, f_main = remove_duplicates(pool, main_img, a, emb_file, f_main)
     est = [ita.estimate(p) for p in pool["path"]]
     pool["ita"] = [e["ita"] for e in est]
     pool["ita_band"] = [e["ita_band"] for e in est]
@@ -142,6 +148,34 @@ def main():
                     s = shift_tone(im, t)
                     cells.append((s if s is not None else im, f"-> {tb} ({t:.0f})" if s is not None else "skipped"))
     sheet(cells, 4, out / "tone_shift_examples.png", side=170)
+
+    if a.control_out:
+        cout = Path(a.control_out)
+        cout.mkdir(parents=True, exist_ok=True)
+        ctl = external.build_control_pool(a.fitz, a.csv, pool, a.per_condition, seed=a.seed + 1)
+        c0 = len(ctl)
+        ctl, c_hash, c_emb, f_main = remove_duplicates(ctl, main_img, a, emb_file, f_main)
+        overlap = set(ctl["md5"]) & set(pool["md5"])
+        ctl = ctl[~ctl["md5"].isin(overlap)]
+        ctl = external.trim_to_match(ctl, pool)
+        est = [ita.estimate(p) for p in ctl["path"]]
+        ctl["ita"] = [e["ita"] for e in est]
+        ctl["ita_band"] = [e["ita_band"] for e in est]
+        ctl.drop(columns=["rank"]).to_csv(cout / "pool.csv", index=False)
+        fz = pd.DataFrame({"look-alike pool": pool["fitzpatrick"].value_counts(),
+                           "control pool": ctl["fitzpatrick"].value_counts()}).fillna(0).astype(int).sort_index()
+        crep = [
+            f"control candidates drawn: {c0} (target {len(pool)} plus 5% margin)",
+            f"removed as duplicates of study images or of each other: {c_hash} (hash), {c_emb} (embedding)",
+            f"final control pool: {len(ctl)} images from {ctl['condition'].nunique()} conditions",
+            "", "Fitzpatrick type, look-alike vs control:", fz.to_string(),
+            "", "control by ITA band:", ctl["ita_band"].value_counts().to_string(),
+            "", "control conditions (top 40):", ctl["condition"].value_counts().head(40).to_string(),
+        ]
+        (cout / "pool_report.txt").write_text("\n".join(crep) + "\n")
+        print("\n".join(crep))
+        ex = ctl.groupby("condition").head(1).head(48)
+        sheet([(p, c) for p, c in zip(ex["path"], ex["condition"])], 8, cout / "pool_examples.png")
 
 
 if __name__ == "__main__":

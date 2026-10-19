@@ -31,16 +31,20 @@ from .ita import skin_mask
 BAND_RANGES = {"dark": (-30.0, 10.0), "intermediate": (10.0, 41.0), "light": (41.0, 60.0)}
 BAND_ORDER = ["dark", "intermediate", "light", "unknown"]
 
-# name -> settings. ``extra`` = add look-alike negatives; ``sampler`` = "group"
-# for tone-balanced sampling; ``aug`` in {"base", "hsv", "tone"}.
+# name -> settings. ``extra`` = which auxiliary negatives to add (False, "lookalike"
+# or "control"); ``sampler`` = "group" for tone-balanced sampling; ``aug`` in
+# {"base", "hsv", "tone"}. "rand" is the control for "la": the same number of
+# Fitzpatrick17k images, matched on Fitzpatrick type, from conditions that are
+# NOT look-alikes (external.build_control_pool).
 CONFIGS = {
     "erm":   {"aug": "base", "sampler": None, "loss": "ce", "mixup": 0.0, "extra": False},
     "hsv":   {"aug": "hsv", "sampler": None, "loss": "ce", "mixup": 0.0, "extra": False},
     "mixup": {"aug": "base", "sampler": None, "loss": "ce", "mixup": 0.2, "extra": False},
     "gdro":  {"aug": "base", "sampler": None, "loss": "gdro", "mixup": 0.0, "extra": False},
-    "la":    {"aug": "base", "sampler": None, "loss": "ce", "mixup": 0.0, "extra": True},
+    "la":    {"aug": "base", "sampler": None, "loss": "ce", "mixup": 0.0, "extra": "lookalike"},
+    "rand":  {"aug": "base", "sampler": None, "loss": "ce", "mixup": 0.0, "extra": "control"},
     "tone":  {"aug": "tone", "sampler": "group", "loss": "ce", "mixup": 0.0, "extra": False},
-    "tale":  {"aug": "tone", "sampler": "group", "loss": "ce", "mixup": 0.0, "extra": True},
+    "tale":  {"aug": "tone", "sampler": "group", "loss": "ce", "mixup": 0.0, "extra": "lookalike"},
 }
 
 
@@ -73,11 +77,24 @@ class ToneShift:
 
 
 def shift_tone(img: Image.Image, target_ita: float, red_drop: float = 0.30, blur: float = 3.0,
-               max_delta: float = 35.0, min_pixels: int = 300):
-    """Return a copy of ``img`` whose healthy skin has ITA ~ ``target_ita``, or None."""
+               max_delta: float = 35.0, min_pixels: int = 300, return_info: bool = False):
+    """Return a copy of ``img`` whose healthy skin has ITA ~ ``target_ita``, or None.
+
+    With ``return_info`` a (image or None, info) pair is returned; ``info`` holds
+    the skin and healthy-skin masks and the applied shift, for checking the
+    augmentation (scripts/12_tone_shift_check.py). The image is the same either way.
+    """
+    info = {"reason": None}
+    out = _shift_tone(img, target_ita, red_drop, blur, max_delta, min_pixels, info)
+    return (out, info) if return_info else out
+
+
+def _shift_tone(img, target_ita, red_drop, blur, max_delta, min_pixels, info):
     rgb = np.asarray(img.convert("RGB"))
     skin = skin_mask(rgb)
+    info["skin"] = skin
     if skin.sum() < min_pixels:
+        info["reason"] = "too few skin pixels"
         return None
     lab = rgb2lab(rgb)
     # Lesion / inflamed skin = skin pixels clearly redder than the image's typical
@@ -87,14 +104,18 @@ def shift_tone(img: Image.Image, target_ita: float, red_drop: float = 0.30, blur
     mad = 1.4826 * np.median(np.abs(a[skin] - med))
     thr = min(med + 2.0 * max(mad, 1.0), np.quantile(a[skin], 1 - red_drop / 3))
     healthy = skin & (a <= thr)
+    info["healthy"] = healthy
     if healthy.sum() < min_pixels:
+        info["reason"] = "too few healthy-skin pixels"
         return None
     L_med = float(np.median(lab[..., 0][healthy]))
     b_med = float(np.median(lab[..., 2][healthy]))
     if b_med < 3.0:  # ITA is unstable for near-neutral colour
+        info["reason"] = "near-neutral colour"
         return None
     L_target = 50.0 + b_med * np.tan(np.radians(target_ita))
     delta = float(np.clip(np.clip(L_target, 20.0, 90.0) - L_med, -max_delta, max_delta))
+    info.update(delta=delta, wanted=float(L_target - L_med), L_med=L_med, b_med=b_med)
     w = gaussian_filter(healthy.astype(np.float32), sigma=blur)
     lab[..., 0] = np.clip(lab[..., 0] + w * delta, 0.0, 100.0)
     out = np.clip(lab2rgb(lab) * 255.0, 0, 255).astype(np.uint8)
