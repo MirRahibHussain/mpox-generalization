@@ -30,6 +30,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--index", default="data/index")
     ap.add_argument("--pool", default="data/pool/pool.csv")
+    ap.add_argument("--control-pool", default="data/pool_control/pool.csv")
     ap.add_argument("--splits", default="splits")
     ap.add_argument("--out", default="results_methods")
     ap.add_argument("--models", nargs="+", default=["resnet50", "efficientnet_b0", "vit_small_patch16_224"])
@@ -47,11 +48,11 @@ def main():
             raise SystemExit(f"unknown method {m}; choose from {list(CONFIGS)}")
 
     images = pd.read_csv(Path(a.index) / "images.csv")
-    pool = pd.read_csv(a.pool) if Path(a.pool).exists() else None
+    pools = {"lookalike": a.pool, "control": a.control_pool}
+    pools = {k: pd.read_csv(v) for k, v in pools.items() if Path(v).exists()}
     if a.cache_dir:
         images = cache.build(images, a.cache_dir)
-        if pool is not None:
-            pool = cache.build(pool, a.cache_dir)
+        pools = {k: cache.build(v, a.cache_dir) for k, v in pools.items()}
     man = pd.read_csv(Path(a.splits) / "manifest.csv")
     man = man[man["task"] == "binary"]
     p3 = man[man["protocol"] == "P3"].sort_values(["train_dataset", "rep"])
@@ -76,7 +77,7 @@ def main():
 
     start = float(os.environ.get("PIPELINE_START", time.time()))
     deadline = start + a.max_hours * 3600 if a.max_hours > 0 else None
-    print(f"{len(jobs)} runs -> {out}/  (pool: {0 if pool is None else len(pool)} images)", flush=True)
+    print(f"{len(jobs)} runs -> {out}/  (pools: {', '.join(f'{k} {len(v)}' for k, v in pools.items()) or 'none'})", flush=True)
     skipped = 0
     for k, (name, mdl, meth) in enumerate(jobs, 1):
         run_dir = out / name / mdl / meth
@@ -86,7 +87,8 @@ def main():
             skipped += 1
             continue
         spec = json.loads((Path(a.splits) / f"{name}.json").read_text())
-        rec = run_method(spec, images, mdl, seed=spec["rep"], out_dir=run_dir, method=meth, extra=pool,
+        extra = pools.get(CONFIGS[meth]["extra"]) if CONFIGS[meth]["extra"] else None
+        rec = run_method(spec, images, mdl, seed=spec["rep"], out_dir=run_dir, method=meth, extra=extra,
                          epochs=a.epochs, patience=a.patience, num_workers=a.workers)
         el = (time.time() - start) / 3600
         print(f"[{k}/{len(jobs)}] {name} {mdl} {meth}: bal_acc={rec['balanced_accuracy']:.3f} "
