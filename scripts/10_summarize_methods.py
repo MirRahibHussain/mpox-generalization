@@ -14,9 +14,20 @@ import pandas as pd
 
 NAMES = {"erm": "ERM (standard fine-tuning)", "hsv": "Colour jitter (hue/saturation)",
          "mixup": "Mixup", "gdro": "Group DRO", "la": "Look-alike exposure only",
-         "tone": "Tone balancing + tone shift only", "tale": "TALE (proposed)",
-         "rand": "Random-negative control"}
-ORDER = ["erm", "hsv", "mixup", "gdro", "la", "rand", "tone", "tale"]
+         "tone": "Tone balancing + tone shift only", "tale": "TALE",
+         "rand": "Random-negative control",
+         "atlas": "Atlas negatives, flat head", "hod": "HOD (Roy et al. 2022)",
+         "factor": "FACTOR (proposed)", "factor_notone": "FACTOR without tone matching",
+         "factor_static": "FACTOR head, static control pool",
+         "div5": "Atlas, 5 conditions", "div20": "Atlas, 20 conditions"}
+SHORT = {"erm": "ERM", "hsv": "Colour jitter", "mixup": "Mixup", "gdro": "Group DRO", "la": "Look-alike only",
+         "tone": "Tone only", "tale": "TALE", "rand": "Random negatives", "atlas": "Atlas (flat)",
+         "hod": "HOD", "factor": "FACTOR", "factor_notone": "FACTOR - tone", "factor_static": "FACTOR static",
+         "div5": "Atlas 5 cond.", "div20": "Atlas 20 cond."}
+ORDER = ["erm", "hsv", "mixup", "gdro", "la", "rand", "tone", "tale",
+         "atlas", "div5", "div20", "hod", "factor_static", "factor_notone", "factor"]
+DEFAULT_PAIRS = ([f"tale:{m}" for m in ["erm", "hsv", "mixup", "gdro", "la", "tone", "rand"]]
+                 + ["la:erm", "tone:erm", "rand:erm", "la:rand"])
 DIRS = {"msid->msld_v2": "MSID → MSLD v2.0", "msld_v2->msid": "MSLD v2.0 → MSID"}
 
 
@@ -95,10 +106,7 @@ def figure(p3, out_png):
         mu, sd = g.mean().reindex(meths), g.std(ddof=1).reindex(meths)
         ax.bar(x + (k - 0.5) * 0.38, mu, 0.36, yerr=sd, color=c, label=DIRS[d],
                error_kw={"elinewidth": 0.7, "capsize": 1.5, "ecolor": "#555"})
-    ax.set_xticks(x, [NAMES[m].split(" (")[0].replace("Tone balancing + tone shift only", "Tone only")
-                      .replace("Look-alike exposure only", "Look-alike only")
-                      .replace("Random-negative control", "Random negatives") for m in meths],
-                  rotation=20, ha="right", fontsize=7)
+    ax.set_xticks(x, [SHORT.get(m, m) for m in meths], rotation=20, ha="right", fontsize=7)
     ax.set_ylim(0.5, 1.0)
     ax.set_ylabel("Balanced accuracy (P3)", fontsize=7.5)
     ax.tick_params(axis="y", labelsize=7)
@@ -115,6 +123,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results_methods")
     ap.add_argument("--index", default="data/index")
+    ap.add_argument("--pairs", nargs="*", default=DEFAULT_PAIRS, help="method pairs a:b for table F")
     a = ap.parse_args()
     res = Path(a.results)
     images = pd.read_csv(Path(a.index) / "images.csv")
@@ -124,6 +133,10 @@ def main():
     p2 = df[df["protocol"] == "P2"]
     meths = [m for m in ORDER if m in set(p3["method"])]
     text = []
+
+    meths = [m for m in meths] + sorted(set(p3["method"]) - set(ORDER))
+    for m in meths:
+        NAMES.setdefault(m, m)
 
     # A. main P3 table
     rows = []
@@ -189,9 +202,7 @@ def main():
     key = ["direction", "model", "rep"]
     piv = p3.pivot_table(index=key, columns="method", values="balanced_accuracy")
     rows = []
-    pairs_ = [(r, m) for r in ["tale", "la", "tone", "rand"] for m in meths
-              if m != r and (r == "tale" or m == "erm")] + [("la", "rand")]
-    for ref, m in pairs_:
+    for ref, m in (pr.split(":") for pr in a.pairs):
         if ref not in piv or m not in piv:
             continue
         pr = piv[[ref, m]].dropna()

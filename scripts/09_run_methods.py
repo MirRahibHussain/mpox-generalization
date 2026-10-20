@@ -31,10 +31,11 @@ def main():
     ap.add_argument("--index", default="data/index")
     ap.add_argument("--pool", default="data/pool/pool.csv")
     ap.add_argument("--control-pool", default="data/pool_control/pool.csv")
+    ap.add_argument("--atlas-pool", default="data/pool_atlas/pool.csv")
     ap.add_argument("--splits", default="splits")
     ap.add_argument("--out", default="results_methods")
     ap.add_argument("--models", nargs="+", default=["resnet50", "efficientnet_b0", "vit_small_patch16_224"])
-    ap.add_argument("--methods", nargs="+", default=ORDER)
+    ap.add_argument("--methods", nargs="*", default=ORDER)
     ap.add_argument("--p2-methods", nargs="*", default=["erm", "tale"])
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--patience", type=int, default=7)
@@ -42,20 +43,27 @@ def main():
     ap.add_argument("--cache-dir", default="cache/img288")
     ap.add_argument("--max-hours", type=float, default=0)
     ap.add_argument("--smoke", action="store_true", help="1 epoch, 1 model, 1 split per protocol")
+    ap.add_argument("--train-dataset", default="", help="only P3 splits trained on this dataset")
+    ap.add_argument("--order", choices=["method", "split"], default="method",
+                    help="job order: all splits of one method first, or all methods of one split first "
+                         "(with a time budget, 'split' leaves every method with the same finished splits)")
     a = ap.parse_args()
     for m in a.methods + a.p2_methods:
         if m not in CONFIGS:
             raise SystemExit(f"unknown method {m}; choose from {list(CONFIGS)}")
 
     images = pd.read_csv(Path(a.index) / "images.csv")
-    pools = {"lookalike": a.pool, "control": a.control_pool}
-    pools = {k: pd.read_csv(v) for k, v in pools.items() if Path(v).exists()}
+    pools = {"lookalike": a.pool, "control": a.control_pool, "atlas": a.atlas_pool}
+    needed = {CONFIGS[m]["extra"] for m in a.methods + a.p2_methods if CONFIGS[m]["extra"]}
+    pools = {k: pd.read_csv(v) for k, v in pools.items() if k in needed and Path(v).exists()}
     if a.cache_dir:
         images = cache.build(images, a.cache_dir)
         pools = {k: cache.build(v, a.cache_dir) for k, v in pools.items()}
     man = pd.read_csv(Path(a.splits) / "manifest.csv")
     man = man[man["task"] == "binary"]
     p3 = man[man["protocol"] == "P3"].sort_values(["train_dataset", "rep"])
+    if a.train_dataset:
+        p3 = p3[p3["train_dataset"] == a.train_dataset]
     p2 = man[man["protocol"] == "P2"].sort_values(["train_dataset", "rep"])
     out = Path(a.out)
     models, methods, p2_methods = a.models, a.methods, a.p2_methods
@@ -66,14 +74,11 @@ def main():
         a.epochs, a.patience = 1, 1
 
     jobs = []
-    for meth in methods:  # P3 first: it is the question the method is for
-        for r in p3.itertuples():
-            for mdl in models:
-                jobs.append((r.name, mdl, meth))
-    for meth in p2_methods:
-        for r in p2.itertuples():
-            for mdl in models:
-                jobs.append((r.name, mdl, meth))
+    for split_rows, meths in ((p3, methods), (p2, p2_methods)):  # P3 first: the question the method is for
+        if a.order == "method":
+            jobs += [(r.name, mdl, m) for m in meths for r in split_rows.itertuples() for mdl in models]
+        else:
+            jobs += [(r.name, mdl, m) for r in split_rows.itertuples() for mdl in models for m in meths]
 
     start = float(os.environ.get("PIPELINE_START", time.time()))
     deadline = start + a.max_hours * 3600 if a.max_hours > 0 else None

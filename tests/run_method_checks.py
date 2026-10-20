@@ -29,10 +29,13 @@ STUB = None
 if importlib.util.find_spec("torch") is None:
     STUB = Path(tempfile.mkdtemp(prefix="torchstub_"))
     (STUB / "torch" / "nn").mkdir(parents=True)
+    (STUB / "torch" / "utils" / "data").mkdir(parents=True)
     (STUB / "torch" / "__init__.py").write_text(
         "def initial_seed():\n    return 12345\nclass Generator: pass\n")
     (STUB / "torch" / "nn" / "__init__.py").write_text("")
     (STUB / "torch" / "nn" / "functional.py").write_text("")
+    (STUB / "torch" / "utils" / "__init__.py").write_text("")
+    (STUB / "torch" / "utils" / "data" / "__init__.py").write_text("class Sampler: pass\nclass Dataset: pass\n")
     sys.path.insert(0, str(STUB))
     os.environ["PYTHONPATH"] = str(STUB) + os.pathsep + os.environ.get("PYTHONPATH", "")
 
@@ -41,7 +44,8 @@ from run_cpu_checks import build_fake, fake_image, run  # noqa: E402
 from mpoxgen import external, metrics  # noqa: E402
 from mpoxgen.ita import skin_mask  # noqa: E402
 from mpoxgen.labels import task_target  # noqa: E402
-from mpoxgen.methods import CONFIGS, balanced_weights, group_ids, shift_tone  # noqa: E402
+from mpoxgen.factor import EpochSampler, atlas_weights  # noqa: E402
+from mpoxgen.methods import CONFIGS, balanced_weights, config, group_ids, shift_tone  # noqa: E402
 from skimage.color import rgb2lab  # noqa: E402
 
 RNG = np.random.default_rng(1)
@@ -74,8 +78,40 @@ def check_sampling():
     w = balanced_weights(g)
     totals = pd.Series(w).groupby(g).sum()
     assert np.allclose(totals, totals.iloc[0]), "every group should carry the same total weight"
-    assert set(CONFIGS) == {"erm", "hsv", "mixup", "gdro", "la", "rand", "tone", "tale"}
+    assert set(CONFIGS) == {"erm", "hsv", "mixup", "gdro", "la", "rand", "tone", "tale", "atlas", "hod",
+                            "factor", "factor_notone", "factor_static", "div5", "div20"}
+    assert config("erm")["head"] == "binary" and config("factor")["draw"] == "cond_tone"
+    assert config("factor_static")["extra"] == "control" and config("div5")["n_conditions"] == 5
     assert CONFIGS["rand"]["extra"] == "control" and CONFIGS["la"]["extra"] == "lookalike"
+
+
+def check_factor():
+    """Atlas draw weights and the per-epoch sampler (the losses need real PyTorch)."""
+    cond = np.array(["a"] * 60 + ["b"] * 30 + ["c"] * 10)
+    bands = np.array((["light"] * 50 + ["dark"] * 10) + (["light"] * 20 + ["dark"] * 10) + ["intermediate"] * 10)
+    w = atlas_weights(cond, bands, mode="cond")
+    per = pd.Series(w).groupby(cond).sum()
+    assert np.allclose(per, 1 / 3), "condition-uniform draw should give every condition the same weight"
+    target = ["dark"] * 6 + ["light"] * 3 + ["intermediate"] * 1
+    wt = atlas_weights(cond, bands, mode="cond_tone", mpox_bands=target)
+    mix = pd.Series(wt).groupby(bands).sum()
+    assert np.isclose(mix["dark"], 0.6) and np.isclose(mix["light"], 0.3) and np.isclose(mix["intermediate"], 0.1), \
+        f"tone matching should reproduce the mpox band mix, got {mix.to_dict()}"
+    w2 = atlas_weights(cond, bands, mode="cond", n_conditions=2, seed=3)
+    assert (pd.Series(w2).groupby(cond).sum() > 0).sum() == 2, "n_conditions should restrict the draw"
+    try:
+        atlas_weights(cond, bands, mode="cond_tone")
+        raise AssertionError("cond_tone without mpox bands was accepted")
+    except ValueError:
+        pass
+    s = EpochSampler(n_study=40, atlas_offset=40, atlas_w=w, k=25, seed=0)
+    e1, e2 = list(iter(s)), list(iter(s))
+    assert len(e1) == len(s) == 65
+    assert sorted(i for i in e1 if i < 40) == list(range(40)), "every study image once per epoch"
+    a1, a2 = [i for i in e1 if i >= 40], [i for i in e2 if i >= 40]
+    assert len(a1) == 25 and len(set(a1)) == 25 and max(a1) < 140, "atlas draw without replacement, in range"
+    assert set(a1) != set(a2), "a new atlas subset should be drawn every epoch"
+    print("factor: draw weights, tone matching and epoch sampler OK")
 
 
 def build_fake_fitz(base: Path, msld_img: Path):
@@ -106,6 +142,7 @@ def build_fake_fitz(base: Path, msld_img: Path):
 def main():
     check_tone_shift()
     check_sampling()
+    check_factor()
     try:
         external.build_pool(".", ".", conditions=["mpox"])
         raise AssertionError("an evaluation class was accepted as a pool condition")
@@ -144,6 +181,23 @@ def main():
         lim = pool["fitzpatrick"].value_counts()
         assert all(n <= lim.get(f, 0) for f, n in ctl["fitzpatrick"].value_counts().items()), "Fitzpatrick mix exceeds target"
         print(f"control pool: {len(ctl)} images from {ctl['condition'].nunique()} non-look-alike condition(s)")
+        run(["scripts/15_atlas_pool.py", "--fitz", str(fitz_root), "--csv", str(csv),
+             "--index", "data/index", "--out", "data/pool_atlas", "--workers", "2"], work)
+        atl = pd.read_csv(work / "data/pool_atlas/pool.csv")
+        assert set(atl["condition"]) == {"scabies", "folliculitis", "milia", "psoriasis"}, "atlas should keep all conditions"
+        assert not any(atl["path"].str.contains("f" * 32)), "planted duplicate of a study image kept in atlas"
+        assert not any(atl["path"].str.contains(f"{4:032x}")), "QC 'wrongly labelled' image kept in atlas"
+        assert atl["ita_band"].notna().all() and len(atl) == 47
+        print(f"atlas pool: {len(atl)} images; planted duplicate removed")
+        run(["scripts/16_ita_validation.py", "--pool", "data/pool_atlas/pool.csv", "--index", "data/index",
+             "--out", "results_methods", "--n-boot", "50"], work)
+        mix = pd.read_csv(work / "results_methods/atlas_tone_mix.csv")
+        for ds, g in mix.groupby("dataset"):
+            tgt = g[g["draw"] == "mpox images (target)"].iloc[0]
+            got = g[g["draw"] == "atlas, cond_tone"].iloc[0]
+            for b in ["light", "intermediate", "dark"]:
+                if tgt[b] > 0 and (atl["ita_band"] == b).any():
+                    assert abs(tgt[b] - got[b]) < 0.002, f"tone matching off for {ds}/{b}"
         run(["scripts/12_tone_shift_check.py", "--index", "data/index", "--out", "results_methods",
              "--per-group", "4"], work)
         assert (work / "results_methods/tone_shift_check.md").exists()
@@ -166,6 +220,8 @@ def main():
                     d.mkdir(parents=True, exist_ok=True)
                     pr = pd.DataFrame({"image_id": spec["test"], "y_true": y, "y_pred": prob.argmax(1),
                                        "p0": prob[:, 0], "p1": prob[:, 1]})
+                    if config(meth)["head"] == "factor":
+                        pr["pd"], pr["pm"] = RNG.random(len(y)), RNG.random(len(y))
                     pr.to_csv(d / "predictions.csv", index=False)
                     pv = RNG.dirichlet(np.ones(2), len(yv))
                     pd.DataFrame({"image_id": spec["val"], "y_true": yv, "y_pred": pv.argmax(1),
@@ -184,6 +240,18 @@ def main():
         ps = pd.read_csv(work / "results_methods/paired_stats.csv")
         assert len(ps) and (ps["p_holm"] >= ps["p"] - 1e-12).all() and (ps["p_holm"] <= 1).all()
         assert ((ps["ci_low"] <= ps["mean_diff"] + 1e-12) & (ps["mean_diff"] <= ps["ci_high"] + 1e-12)).all()
+        run(["scripts/17_open_set.py", "--results", "results_methods", "--index", "data/index"], work)
+        osr = pd.read_csv(work / "results_methods/open_set_runs.csv")
+        assert set(osr["method"]) == set(CONFIGS)
+        assert osr.loc[osr["method"] == "factor", "factor_mpox_auroc"].notna().all()
+        assert osr.loc[osr["method"] == "erm", "factor_mpox_auroc"].isna().all()
+        un = osr[osr["direction"] == "msid->msld_v2"]["n_unseen"]
+        assert (un > 0).all(), "cowpox/HFMD should be unseen classes for MSID-trained runs"
+        assert (osr[osr["direction"] == "msld_v2->msid"]["n_unseen"] == 0).all()
+        run(["scripts/13_paired_stats.py", "--runs", "results_methods/open_set_runs.csv", "--pairs",
+             "factor:erm", "factor:atlas", "--out", "results_methods/open_set_paired",
+             "--metrics", "closed_bal_acc", "unseen_spec"], work)
+        assert (work / "results_methods/open_set_paired.md").exists()
         for f in ("methods_tables.md", "table_p3_methods.csv", "table_tone_methods.csv",
                   "table_called_mpox_methods.csv", "table_p2_methods.csv", "table_tests.csv", "fig_methods.png"):
             assert (work / "results_methods" / f).exists(), f
