@@ -73,3 +73,27 @@ band, and the two factor AUROCs of FACTOR.
 
 Every number above is reported for every method, in both training directions, in the paper and in
 paper_results/, whether or not a hypothesis is supported.
+
+## Amendment 1 (20 October 2026, 11:36 UTC, before any model was trained on or scored against MCSI)
+
+The first external run (Kaggle Version 6, started 10:57 UTC) was stopped during data preparation,
+before any training began, for two reasons found in its log:
+
+1. **Bug: the 100 acne images were not loaded.** metadata.csv lists their file names without the
+   ".png" extension, so the indexer skipped them. The indexer now adds the missing extension and
+   stops with an error if any listed image is not found. No analysis choice changes.
+2. **The duplicate audit removed 94 of the 100 mpox images** (copies of MSLD v2.0 images: 62;
+   of MSID images: 66; most found only by the ORB check, i.e. cropped copies), 6 of 100 chickenpox
+   and 6 of 99 healthy images. The pre-registered clean set therefore holds only 6 mpox images,
+   which makes sensitivity, balanced accuracy and the AUROCs on it very imprecise. The primary
+   analysis stays exactly as registered. We add one **secondary** analysis, fixed now: each model is
+   also scored on a direction-specific clean set that removes only the copies of images in its own
+   training dataset (MSID-trained models keep the MCSI mpox images that copy MSLD v2.0 images, and
+   the other way round). These models never saw those images, but the images are not independent
+   of the other study dataset, so these results are reported as secondary and labelled as such.
+   Models therefore predict every MCSI image, and scripts/19_external_eval.py selects the set.
+   Hypotheses H1-H4, methods, thresholds and statistics are unchanged and are applied to both sets.
+
+The size of the overlap is itself reported as a result of the duplicate audit: the mpox class of a
+third public mpox dataset consists mostly of images also present, often cropped, in MSLD v2.0 and
+MSID.

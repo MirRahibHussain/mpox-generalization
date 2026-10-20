@@ -72,11 +72,16 @@ def fetch(dest: Path) -> Path:
 def load_mcsi(root: Path) -> pd.DataFrame:
     meta = pd.read_csv(root / "metadata.csv")
     meta.columns = [c.strip() for c in meta.columns]
-    rows = []
+    rows, missing = [], []
     for r in meta.itertuples():
         p = root / "images" / str(r.img_id).strip()
-        if not p.exists():
-            continue
+        if not p.exists():  # some ids in metadata.csv lack the file extension (the acne images)
+            hits = [p.with_name(p.name + ext) for ext in (".png", ".jpg", ".jpeg", ".PNG", ".JPG")]
+            hits = [h for h in hits if h.exists()]
+            if not hits:
+                missing.append(str(r.img_id))
+                continue
+            p = hits[0]
         diag = str(r.diagnostic).strip()
         rows.append({"dataset": "mcsi", "path": str(p), "file": p.name, "label": LABELS.get(diag, diag),
                      "mcsi_class": diag, "source": str(r.source).strip(), "md5": md5_of(p)})
@@ -90,7 +95,10 @@ def load_mcsi(root: Path) -> pd.DataFrame:
         df = df.merge(t[["file", "mcsi_ita", "mcsi_tone", "mcsi_ita_class"]], on="file", how="left")
     n0 = len(df)
     df = df.drop_duplicates("md5").reset_index(drop=True)
-    print(f"MCSI: {n0} images listed and found, {n0 - len(df)} exact duplicates inside MCSI dropped", flush=True)
+    print(f"MCSI: {len(meta)} listed, {n0} found ({len(missing)} missing: {missing[:5]}), "
+          f"{n0 - len(df)} exact duplicates inside MCSI dropped", flush=True)
+    if missing:
+        raise SystemExit(f"{len(missing)} MCSI images listed in metadata.csv were not found")
     return df
 
 
@@ -224,6 +232,9 @@ def main():
     ext.to_csv(out / "images.csv", index=False)
     clean = ext[~ext["duplicate_any"]].reset_index(drop=True)
     clean.to_csv(out / "images_clean.csv", index=False)
+    # every MCSI image (with its duplicate flags), so models can also be scored on the
+    # direction-specific clean sets of amendment 1 of PREREGISTRATION_MCSI.md
+    ext.to_csv(out / "images_all.csv", index=False)
     review_sheet(pairs[pairs["duplicate"] | (pairs["inliers"] >= 10)], ext, study, out / "duplicates_review.png")
 
     tab = ext.groupby("label").agg(images=("image_id", "size"), dup_msld=("dup_msld_v2", "sum"),
