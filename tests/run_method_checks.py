@@ -150,7 +150,8 @@ def build_fake_mcsi(base: Path, study_img: Path):
         for k in range(n):
             f = f"{cls}_{k}.png"
             fake_image(int(RNG.integers(1e9)), k % 3).save(root / "images" / f)
-            rows.append({"diagnostic": cls, "img_id": f, "source": "Fake"})
+            # MCSI lists its acne images without the file extension
+            rows.append({"diagnostic": cls, "img_id": f[:-4] if cls.startswith("acne") else f, "source": "Fake"})
             tone.append({"Filename": f, "ITA": 20.0, "CLS": "tan1", "Type": "light"})
     with Image.open(study_img) as im:
         w, h = im.size
@@ -227,6 +228,8 @@ def main():
              "--out", "data/external_mcsi"], work)
         ext = pd.read_csv(work / "data/external_mcsi/images.csv")
         clean = pd.read_csv(work / "data/external_mcsi/images_clean.csv")
+        allm = pd.read_csv(work / "data/external_mcsi/images_all.csv")
+        assert len(allm) == 26 and (allm["label"] == "acne").sum() == 6, "acne images listed without extension were lost"
         dups = set(ext.loc[ext["duplicate_any"], "file"])
         assert {"monkeypox_crop.png", "monkeypox_copy.jpg"} <= dups, f"planted MCSI duplicates not found: {dups}"
         assert len(dups) <= 3, f"too many MCSI images flagged on fake data: {dups}"
@@ -258,11 +261,11 @@ def main():
                         pr["pd"], pr["pm"] = RNG.random(len(y)), RNG.random(len(y))
                     pr.to_csv(d / "predictions.csv", index=False)
                     if r.protocol == "P3":
-                        pe = RNG.dirichlet(np.ones(2), len(clean))
-                        pm_ = pd.DataFrame({"image_id": clean["image_id"], "y_true": (clean["label"] == "mpox").astype(int),
+                        pe = RNG.dirichlet(np.ones(2), len(allm))
+                        pm_ = pd.DataFrame({"image_id": allm["image_id"], "y_true": (allm["label"] == "mpox").astype(int),
                                             "y_pred": pe.argmax(1), "p0": pe[:, 0], "p1": pe[:, 1]})
                         if config(meth)["head"] == "factor":
-                            pm_["pd"], pm_["pm"] = RNG.random(len(clean)), RNG.random(len(clean))
+                            pm_["pd"], pm_["pm"] = RNG.random(len(allm)), RNG.random(len(allm))
                         pm_.to_csv(d / "predictions_mcsi.csv", index=False)
                     pv = RNG.dirichlet(np.ones(2), len(yv))
                     pd.DataFrame({"image_id": spec["val"], "y_true": yv, "y_pred": pv.argmax(1),
@@ -294,8 +297,14 @@ def main():
              "--metrics", "closed_bal_acc", "unseen_spec"], work)
         assert (work / "results_methods/open_set_paired.md").exists()
         run(["scripts/19_external_eval.py", "--results", "results_methods",
-             "--external", "data/external_mcsi/images_clean.csv"], work)
+             "--external", "data/external_mcsi/images_all.csv"], work)
+        run(["scripts/19_external_eval.py", "--results", "results_methods", "--external",
+             "data/external_mcsi/images_all.csv", "--clean", "direction", "--suffix", "_direction"], work)
+        erd = pd.read_csv(work / "results_methods/external_runs_direction.csv")
         er = pd.read_csv(work / "results_methods/external_runs.csv")
+        assert (er["n_mpox"] == 6).all(), "common clean set should keep the 6 non-duplicate mpox images"
+        n_dir = erd.groupby("direction")["n_mpox"].first().to_dict()
+        assert n_dir["msid->mcsi"] == 7 and n_dir["msld_v2->mcsi"] == 6, n_dir
         assert set(er["direction"]) == {"msid->mcsi", "msld_v2->mcsi"} and set(er["method"]) == set(CONFIGS)
         assert er["called_acne"].notna().all() and er["shortcut_gap"].notna().all()
         assert er.loc[er["method"] == "factor", "factor_mpox_auroc"].notna().all()

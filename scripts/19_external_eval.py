@@ -14,7 +14,7 @@ For every P3-trained run with predictions_<name>.csv (default name "mcsi"):
 Writes external_runs.csv (one row per run; "direction" = training dataset ->
 name, the format scripts/13_paired_stats.py reads) and external.md.
 
-    python scripts/19_external_eval.py --results results_external --external data/external_mcsi/images_clean.csv
+    python scripts/19_external_eval.py --results results_external --external data/external_mcsi/images_all.csv
 """
 
 import argparse
@@ -63,9 +63,13 @@ def run_row(pred: pd.DataFrame, info: pd.DataFrame) -> dict:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results_external")
-    ap.add_argument("--external", default="data/external_mcsi/images_clean.csv")
+    ap.add_argument("--external", default="data/external_mcsi/images_all.csv")
     ap.add_argument("--name", default="mcsi")
     ap.add_argument("--order", nargs="*", default=["erm", "rand", "atlas", "hod", "factor_notone", "factor"])
+    ap.add_argument("--clean", choices=["common", "direction"], default="common",
+                    help="common: drop MCSI images that duplicate any study image (pre-registered primary set); "
+                         "direction: drop only duplicates of the model's training dataset (amendment 1, secondary)")
+    ap.add_argument("--suffix", default="", help="appended to the output file names")
     a = ap.parse_args()
     res = Path(a.results)
     info = pd.read_csv(a.external)
@@ -77,22 +81,34 @@ def main():
             continue
         row = {"protocol": "P3", "direction": f"{rec['train_dataset']}->{a.name}", "model": rec["model"],
                "rep": rec["rep"], "method": rec["method"]}
-        row.update(run_row(pd.read_csv(f), info))
+        if a.clean == "common":
+            keep = info[~info["duplicate_any"]] if "duplicate_any" in info else info
+        else:
+            col = f"dup_{rec['train_dataset']}"
+            keep = info[~info[col]] if col in info else info
+        pred = pd.read_csv(f)
+        pred = pred[pred["image_id"].isin(set(keep["image_id"]))]
+        row["n_mpox"] = int((keep.set_index("image_id").loc[pred["image_id"], "label"] == "mpox").sum())
+        row.update(run_row(pred, keep))
         rows.append(row)
     runs = pd.DataFrame(rows)
     if runs.empty:
         raise SystemExit(f"no runs with predictions_{a.name}.csv under {res}")
-    runs.to_csv(res / "external_runs.csv", index=False)
+    runs.to_csv(res / f"external_runs{a.suffix}.csv", index=False)
 
-    counts = info["label"].value_counts().to_dict()
-    text = [f"# External test on {NAMES.get(a.name, a.name)} (clean set: {len(info)} images, {counts}); "
+    base = info[~info["duplicate_any"]] if (a.clean == "common" and "duplicate_any" in info) else info
+    counts = base["label"].value_counts().to_dict()
+    what = ("pre-registered clean set" if a.clean == "common"
+            else "direction-specific clean sets (amendment 1; counts below are before removing training-set copies)")
+    text = [f"# External test on {NAMES.get(a.name, a.name)} ({what}: {len(base)} images, {counts}); "
             "mean ± SD over backbones and seeds", ""]
     meths = [x for x in a.order if x in set(runs["method"])] + sorted(set(runs["method"]) - set(a.order))
     extra = [c for c in ["factor_disease_auroc", "factor_mpox_auroc"] if c in runs]
     for d in sorted(runs["direction"].unique()):
         src = d.split("->")[0]
         sub = runs[runs["direction"] == d]
-        text += [f"## Trained on {NAMES.get(src, src)}", "",
+        nm = sorted(set(sub["n_mpox"]))
+        text += [f"## Trained on {NAMES.get(src, src)} (mpox images scored: {nm})", "",
                  "| method | runs | " + " | ".join(COLS + extra) + " |", "| --- " * (len(COLS + extra) + 2) + "|"]
         for meth in meths:
             g = sub[sub["method"] == meth]
@@ -105,7 +121,7 @@ def main():
                              else (f"{x.mean():.3f}" if len(x) else "–"))
             text.append(f"| {meth} | {len(g)} | " + " | ".join(cells) + " |")
         text.append("")
-    (res / "external.md").write_text("\n".join(text) + "\n")
+    (res / f"external{a.suffix}.md").write_text("\n".join(text) + "\n")
     print("\n".join(text))
 
 

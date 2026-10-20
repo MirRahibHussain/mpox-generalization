@@ -55,11 +55,11 @@ python scripts/15_atlas_pool.py --fitz "$FITZ" --csv fitzpatrick17k.csv --index 
 
 stamp "9a. smoke test (1 epoch, with the external test set)"
 python scripts/09_run_methods.py --smoke --methods erm factor hod --p2-methods \
-    --external mcsi=data/external_mcsi/images_clean.csv --workers "$WORKERS" --cache-dir "$CACHE"
+    --external mcsi=data/external_mcsi/images_all.csv --workers "$WORKERS" --cache-dir "$CACHE"
 
 stamp "9b. pre-specified methods on the P3 training splits; every model also predicts clean MCSI"
 python scripts/09_run_methods.py --methods $METHODS --p2-methods --order split --out "$RES" \
-    --external mcsi=data/external_mcsi/images_clean.csv --workers "$WORKERS" --cache-dir "$CACHE" \
+    --external mcsi=data/external_mcsi/images_all.csv --workers "$WORKERS" --cache-dir "$CACHE" \
     --max-hours "$MAX_HOURS"
 
 stamp "10-13, 17, 19. summaries and statistics"
@@ -67,12 +67,17 @@ python scripts/10_summarize_methods.py --results "$RES" --index data/index --pai
 python scripts/13_paired_stats.py --runs "$RES/all_runs.csv" --pairs $PAIRS \
     --metrics balanced_accuracy auroc mpox_specificity || echo "paired stats failed"
 python scripts/17_open_set.py --results "$RES" --index data/index || echo "open-set analysis failed"
-python scripts/19_external_eval.py --results "$RES" --external data/external_mcsi/images_clean.csv || echo "external eval failed"
+python scripts/19_external_eval.py --results "$RES" --external data/external_mcsi/images_all.csv || echo "external eval failed"
+python scripts/19_external_eval.py --results "$RES" --external data/external_mcsi/images_all.csv --clean direction \
+    --suffix _direction || echo "external eval (amendment 1) failed"
 # Pre-registered families (PREREGISTRATION_MCSI.md): H1-H3 each method vs ERM; H4 FACTOR vs the others.
 python scripts/13_paired_stats.py --runs "$RES/external_runs.csv" --pairs $EXTPAIRS --out "$RES/external_paired_vs_erm" \
     --metrics balanced_accuracy called_acne shortcut_gap auroc || echo "external stats (H1-H3) failed"
 python scripts/13_paired_stats.py --runs "$RES/external_runs.csv" --pairs $FPAIRS --out "$RES/external_paired_factor" \
     --metrics balanced_accuracy auroc called_acne || echo "external stats (H4) failed"
+python scripts/13_paired_stats.py --runs "$RES/external_runs_direction.csv" --pairs $EXTPAIRS \
+    --out "$RES/external_direction_paired_vs_erm" --metrics balanced_accuracy auroc shortcut_gap \
+    || echo "external stats (amendment 1) failed"
 
 stamp "package"
 KEY="$OUT/key_results_external"
@@ -80,7 +85,7 @@ mkdir -p "$KEY"
 cp "$RES"/*.csv "$RES"/*.md "$RES"/*.png "$KEY/" 2>/dev/null || true
 cp data/external_mcsi/report.txt "$KEY/mcsi_report.txt" 2>/dev/null || true
 cp data/external_mcsi/pairs.csv "$KEY/mcsi_pairs.csv" 2>/dev/null || true
-cp data/external_mcsi/images.csv "$KEY/mcsi_images.csv" 2>/dev/null || true
+cp data/external_mcsi/images_all.csv "$KEY/mcsi_images.csv" 2>/dev/null || true
 cp data/external_mcsi/duplicates_review.png "$KEY/mcsi_duplicates_review.png" 2>/dev/null || true
 cp PREREGISTRATION_MCSI.md "$KEY/" 2>/dev/null || true
 zip -qr "$OUT/outputs_external.zip" "$RES" data/external_mcsi/images.csv data/external_mcsi/pairs.csv \
