@@ -13,8 +13,9 @@ Also included: a perceptual-hash + embedding **duplicate audit** within and
 across datasets, an approximate **skin-tone (ITA) breakdown**, and
 **Grad-CAM** sheets for checking what the models look at.
 
-> **Status:** experiments complete (Kaggle, Tesla T4, 156 trainings in 155 min,
-> October 2026). Summary tables and the Grad-CAM ratings are in
+> **Status:** experiments complete (Kaggle, Tesla T4, October 2026): evaluation
+> study (156 trainings, 155 min), TALE method study (186 trainings) and control
+> study (72 trainings). Summary tables and the Grad-CAM ratings are in
 > `paper_results/`. Per-image predictions and split files are in the Kaggle
 > notebook output and will be published here. The paper is in preparation.
 
@@ -86,9 +87,38 @@ two ablations, on the same cross-dataset splits (ResNet-50, EfficientNet-B0, ViT
 | **TALE** | **0.749** (8 of 9 runs better than ERM, p = 0.008) | 0.837 |
 
 In the harder direction TALE cut the share of hand, foot and mouth disease images called mpox
-from 45% to 19%. The ablation shows that the look-alike images produce the gain; the skin-tone
+from 45% to 19%. The ablation shows that the added images produce the gain; the skin-tone
 components did not meaningfully narrow the dark-versus-light sensitivity gap. Full tables, per-run results
-and statistics are in `paper_results/tale/`.
+and statistics (bootstrap CIs, Holm-adjusted Wilcoxon tests) are in `paper_results/tale/`.
+
+### Control study: do the added images need to look like mpox?
+
+A third session (19 October 2026, 72 trainings, 182 min) re-ran ERM, look-alike exposure and TALE
+next to a **random-negative control**: 1,195 Fitzpatrick17k images drawn at random from 90 other
+conditions (no pox, herpes, blister, vesicle or pustule names), matched to the look-alike pool in
+every Fitzpatrick type. It also saved validation predictions for threshold analysis and measured
+the tone shift on 360 study images.
+
+| MSID → MSLD v2.0, mean of 9 runs | Bal. acc. | Specificity | AUROC | HFMD called mpox |
+| --- | --- | --- | --- | --- |
+| ERM | 0.701 | 0.476 | 0.811 | 45.5% |
+| Look-alike exposure only | 0.744 | 0.633 | 0.836 | 18.5% |
+| Random-negative control | 0.757 | 0.673 | 0.845 | 17.5% |
+| **TALE** | **0.752** (9 of 9 runs better than ERM, Holm-adjusted p = 0.023) | 0.653 | 0.842 | 16.6% |
+
+- TALE's gain repeated (+5.1 points, after +4.6 in the method study).
+- Random diseased-skin negatives helped at least as much as look-alikes (look-alike − control =
+  −1.3 points, 95% CI −3.2 to +0.5): the choice of look-alike conditions did not measurably matter.
+- With a threshold chosen on validation data for 90% sensitivity, the gain over ERM shrank to about
+  3 points; AUROC stayed 2.4–3.4 points higher.
+- The tone shift reached its target ITA band in 92.2% of shifts; lesion pixels changed by a median of
+  1.9 L* units against 13.1 for healthy skin.
+
+Files: `paper_results/control/`. To reproduce on Kaggle (same inputs as above):
+
+```
+!git clone -q https://github.com/MirRahibHussain/mpox-generalization.git && bash mpox-generalization/run_control.sh
+```
 
 Code: `src/mpoxgen/methods.py`, `src/mpoxgen/external.py`, `scripts/08`-`10`. On Kaggle, add the
 Fitzpatrick17k images (e.g. `mobaswiralfarabi/fitzpatrick17k-original`) as a third input and run:
@@ -118,6 +148,14 @@ python scripts/05_run_experiments.py --tasks binary --save-ckpt
 python scripts/06_summarize.py
 # 7. Grad-CAM sheets (CNNs), then fill the 'attention' column by eye
 python scripts/07_gradcam.py --run results/binary_P3_msld_v2_to_msid_rep0/resnet50
+# 8-11. TALE method study and control: see run_methods.sh and run_control.sh
+# 12. tone-shift check on study images (CPU)
+python scripts/12_tone_shift_check.py --index data/index --out results_control
+# 13. paired statistics per direction: bootstrap CIs, exact Wilcoxon, Holm correction
+python scripts/13_paired_stats.py --runs results_control/all_runs.csv --pairs la:erm rand:erm tale:erm la:rand tale:rand tale:la
+# 14. blinded Grad-CAM rating by people, then Cohen's kappa between raters
+python scripts/14_gradcam_rating_kit.py make --results results --ratings paper_results/gradcam_ratings.csv --out gradcam_blind
+python scripts/14_gradcam_rating_kit.py agree --key gradcam_blind/key.csv --sheets rater_A.csv rater_B.csv --ai paper_results/gradcam_ratings.csv
 ```
 
 Models (timm, ImageNet-pretrained): ResNet-50, DenseNet-121, EfficientNet-B0,
@@ -143,8 +181,9 @@ jitter only (no hue change, so skin tone is not altered).
 
 `python tests/run_cpu_checks.py` builds two synthetic datasets with planted
 duplicates and checks indexing, the duplicate audit, ITA, split leakage and
-the summary step on CPU. It does not train models and produces no research
-results.
+the summary step on CPU. `python tests/run_method_checks.py` does the same for
+the TALE code, the control pool, operating points and paired statistics. Neither
+trains real models or produces research results.
 
 ## Limitations to keep in mind
 
@@ -160,7 +199,7 @@ datasets above.
 ## Acknowledgment of AI assistance
 
 An AI assistant (Claude, Anthropic) drafted the code, designed and implemented
-the TALE method after the author chose its direction, set up and launched the
+the TALE method and its random-negative control after the author chose its direction, set up and launched the
 Kaggle runs, rated the Grad-CAM maps in `paper_results/gradcam_ratings.csv`,
 and drafted the manuscript. The author is responsible for the study and its
 results.
