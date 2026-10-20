@@ -179,6 +179,11 @@ def main():
         op = pd.read_csv(work / "results_methods/operating_points_runs.csv")
         assert (op["val_sens_val90"] >= 0.9 - 1e-9).all(), "validation threshold misses the 90% sensitivity target"
         assert set(op["method"]) == set(CONFIGS)
+        run(["scripts/13_paired_stats.py", "--runs", "results_methods/all_runs.csv",
+             "--metrics", "balanced_accuracy", "mpox_specificity"], work)
+        ps = pd.read_csv(work / "results_methods/paired_stats.csv")
+        assert len(ps) and (ps["p_holm"] >= ps["p"] - 1e-12).all() and (ps["p_holm"] <= 1).all()
+        assert ((ps["ci_low"] <= ps["mean_diff"] + 1e-12) & (ps["mean_diff"] <= ps["ci_high"] + 1e-12)).all()
         for f in ("methods_tables.md", "table_p3_methods.csv", "table_tone_methods.csv",
                   "table_called_mpox_methods.csv", "table_p2_methods.csv", "table_tests.csv", "fig_methods.png"):
             assert (work / "results_methods" / f).exists(), f
