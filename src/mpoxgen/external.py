@@ -167,3 +167,29 @@ def trim_to_match(pool: pd.DataFrame, match: pd.DataFrame) -> pd.DataFrame:
     target = match["fitzpatrick"].value_counts()
     parts = [g.sort_values("rank").head(int(target.get(fz, 0))) for fz, g in pool.groupby("fitzpatrick")]
     return pd.concat(parts, ignore_index=True) if parts else pool.iloc[:0]
+
+
+def build_atlas_pool(image_root: str | Path, csv_path: str | Path) -> pd.DataFrame:
+    """Every usable Fitzpatrick17k image (the whole atlas) for FACTOR.
+
+    Keeps all conditions except the evaluation classes, drops images flagged
+    "3 Wrongly labelled" and exact file duplicates. Duplicates of study images
+    are removed later (scripts/15_atlas_pool.py).
+    """
+    img_dir = find_image_dir(image_root)
+    meta = pd.read_csv(csv_path)
+    meta = meta[~meta["label"].astype(str).isin(EVAL_CLASSES)]
+    meta = meta[~meta["qc"].fillna("").astype(str).str.startswith("3")]
+    meta = meta[[(img_dir / f"{h}.jpg").exists() for h in meta["md5hash"]]].reset_index(drop=True)
+    paths = [str(img_dir / f"{h}.jpg") for h in meta["md5hash"]]
+    md5 = [md5_of(p) for p in paths]
+    out = pd.DataFrame({
+        "image_id": ["fitz17k:" + m[:12] for m in md5],
+        "dataset": "fitz17k",
+        "path": paths,
+        "label": "other",
+        "condition": meta["label"].to_numpy(),
+        "fitzpatrick": meta["fitzpatrick_scale"].to_numpy(),
+        "md5": md5,
+    })
+    return out.drop_duplicates("md5").drop_duplicates("image_id").reset_index(drop=True)

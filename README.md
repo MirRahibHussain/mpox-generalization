@@ -129,6 +129,35 @@ Fitzpatrick17k images (e.g. `mobaswiralfarabi/fitzpatrick17k-original`) as a thi
 
 `python tests/run_method_checks.py` checks the method code on synthetic images.
 
+## FACTOR: a factorized, atlas-conditioned classifier (in progress)
+
+The control study suggested that what an mpox model trained on mostly healthy negatives lacks is
+the notion that *visible skin disease* is not the same as *mpox*. FACTOR (Factorized,
+Atlas-Conditioned Training for Open-set Robustness, `src/mpoxgen/factor.py`) builds this into the
+model:
+
+- **Factorized head.** One backbone, two logits: "is any skin disease visible?" (trained on all
+  images; healthy study images are its negatives) and "is the disease mpox?" (trained on diseased
+  images only, mpox against every other disease). A case is called mpox when the geometric mean of
+  the two class-balanced probabilities is at least 0.5.
+- **Condition-diverse atlas exposure.** Negatives come from the whole Fitzpatrick17k atlas (all
+  conditions except the evaluation classes, duplicates of study images removed); a new subset of
+  1,195 images is drawn every epoch, uniform over conditions.
+- **Tone matching.** Draw weights are rescaled so the ITA-band mix of the atlas negatives equals
+  that of the mpox training images.
+
+Compared on P3 with ERM, the random-negative control, a flat head on the same atlas draws, HOD
+(Roy et al., *Med. Image Anal.* 2022) and two ablations (no tone matching; static control pool),
+plus a condition-diversity test (5 / 20 / all conditions), an ITA-vs-annotated-Fitzpatrick check of
+the skin-tone proxy (`scripts/16`), an open-set analysis of seen vs unseen negative classes
+(`scripts/17`) and P2 runs. Deterministic cuDNN kernels (`MPOXGEN_DETERMINISTIC=1`).
+
+```
+!git clone -q https://github.com/MirRahibHussain/mpox-generalization.git && bash mpox-generalization/run_factor.sh
+```
+
+Results will be added to `paper_results/factor/` whatever they show.
+
 ## Pipeline
 
 ```bash
@@ -153,6 +182,7 @@ python scripts/07_gradcam.py --run results/binary_P3_msld_v2_to_msid_rep0/resnet
 python scripts/12_tone_shift_check.py --index data/index --out results_control
 # 13. paired statistics per direction: bootstrap CIs, exact Wilcoxon, Holm correction
 python scripts/13_paired_stats.py --runs results_control/all_runs.csv --pairs la:erm rand:erm tale:erm la:rand tale:rand tale:la
+# 15-17. FACTOR study: whole-atlas pool, ITA vs Fitzpatrick check, open-set analysis (see run_factor.sh)
 # 14. blinded Grad-CAM rating by people, then Cohen's kappa between raters
 python scripts/14_gradcam_rating_kit.py make --results results --ratings paper_results/gradcam_ratings.csv --out gradcam_blind
 python scripts/14_gradcam_rating_kit.py agree --key gradcam_blind/key.csv --sheets rater_A.csv rater_B.csv --ai paper_results/gradcam_ratings.csv
@@ -182,7 +212,8 @@ jitter only (no hue change, so skin tone is not altered).
 `python tests/run_cpu_checks.py` builds two synthetic datasets with planted
 duplicates and checks indexing, the duplicate audit, ITA, split leakage and
 the summary step on CPU. `python tests/run_method_checks.py` does the same for
-the TALE code, the control pool, operating points and paired statistics. Neither
+the TALE and FACTOR code (atlas pool, draw weights, epoch sampler, ITA check, open-set analysis),
+the control pool, operating points and paired statistics. Neither
 trains real models or produces research results.
 
 ## Limitations to keep in mind
@@ -199,7 +230,7 @@ datasets above.
 ## Acknowledgment of AI assistance
 
 An AI assistant (Claude, Anthropic) drafted the code, designed and implemented
-the TALE method and its random-negative control after the author chose its direction, set up and launched the
+the TALE method, its random-negative control and the FACTOR method after the author chose their direction, set up and launched the
 Kaggle runs, rated the Grad-CAM maps in `paper_results/gradcam_ratings.csv`,
 and drafted the manuscript. The author is responsible for the study and its
 results.

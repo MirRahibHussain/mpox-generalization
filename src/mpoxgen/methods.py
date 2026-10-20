@@ -45,7 +45,33 @@ CONFIGS = {
     "rand":  {"aug": "base", "sampler": None, "loss": "ce", "mixup": 0.0, "extra": "control"},
     "tone":  {"aug": "tone", "sampler": "group", "loss": "ce", "mixup": 0.0, "extra": False},
     "tale":  {"aug": "tone", "sampler": "group", "loss": "ce", "mixup": 0.0, "extra": "lookalike"},
+    # FACTOR study (factor.py). "atlas" = whole Fitzpatrick17k, a new subset of k images per
+    # epoch drawn by ``draw`` ("cond": uniform over conditions; "cond_tone": also matched to the
+    # ITA-band mix of the mpox training images). ``head``: "binary" (2-way softmax), "factor"
+    # (disease x mpox-given-disease) or "hod" (Roy et al. 2022 hierarchical outlier detection).
+    "atlas":         {"aug": "base", "sampler": None, "loss": "ce", "mixup": 0.0, "extra": "atlas",
+                      "head": "binary", "draw": "cond"},
+    "hod":           {"aug": "base", "sampler": None, "loss": "ce", "mixup": 0.0, "extra": "atlas",
+                      "head": "hod", "draw": "cond"},
+    "factor":        {"aug": "base", "sampler": None, "loss": "ce", "mixup": 0.0, "extra": "atlas",
+                      "head": "factor", "draw": "cond_tone"},
+    "factor_notone": {"aug": "base", "sampler": None, "loss": "ce", "mixup": 0.0, "extra": "atlas",
+                      "head": "factor", "draw": "cond"},
+    "factor_static": {"aug": "base", "sampler": None, "loss": "ce", "mixup": 0.0, "extra": "control",
+                      "head": "factor"},
+    # condition-diversity test: flat binary head, atlas restricted to n random conditions
+    "div5":          {"aug": "base", "sampler": None, "loss": "ce", "mixup": 0.0, "extra": "atlas",
+                      "head": "binary", "draw": "cond", "n_conditions": 5},
+    "div20":         {"aug": "base", "sampler": None, "loss": "ce", "mixup": 0.0, "extra": "atlas",
+                      "head": "binary", "draw": "cond", "n_conditions": 20},
 }
+
+DEFAULTS = {"head": "binary", "draw": None, "k": 1195, "n_conditions": None}
+
+
+def config(method: str) -> dict:
+    """Settings of a method with defaults filled in."""
+    return {**DEFAULTS, **CONFIGS[method]}
 
 
 class ToneShift:
