@@ -1,0 +1,64 @@
+control candidates drawn: 1258 (target 1195 plus 5% margin)
+removed as duplicates of study images or of each other: 6 (hash), 0 (embedding)
+final control pool: 1195 images from 90 conditions
+
+Fitzpatrick type, look-alike vs control:
+             look-alike pool  control pool
+fitzpatrick                               
+-1                        70            70
+ 1                       207           207
+ 2                       255           255
+ 3                       230           230
+ 4                       218           218
+ 5                       143           143
+ 6                        72            72
+
+control by ITA band:
+ita_band
+dark            429
+intermediate    383
+light           369
+unknown          14
+
+control conditions (top 40):
+condition
+melanoma                           21
+kaposi sarcoma                     21
+scleroderma                        20
+acanthosis nigricans               19
+sarcoidosis                        19
+pilar cyst                         18
+fordyce spots                      18
+sun damaged skin                   18
+xeroderma pigmentosum              18
+pityriasis rubra pilaris           18
+necrobiosis lipoidica              18
+lymphangioma                       18
+psoriasis                          17
+calcinosis cutis                   17
+nevocytic nevus                    17
+keloid                             17
+urticaria pigmentosa               16
+lupus subacute                     16
+lichen planus                      16
+lyme disease                       16
+nevus sebaceous of jadassohn       16
+factitial dermatitis               16
+mycosis fungoides                  16
+neutrophilic dermatoses            15
+aplasia cutis                      15
+striae                             15
+basal cell carcinoma               15
+actinic keratosis                  15
+squamous cell carcinoma            15
+lichen amyloidosis                 15
+pyogenic granuloma                 15
+neurodermatitis                    15
+drug induced pigmentary changes    15
+dermatomyositis                    14
+congenital nevus                   14
+granuloma annulare                 14
+syringoma                          14
+epidermal nevus                    14
+granuloma pyogenic                 14
+seborrheic dermatitis              14
