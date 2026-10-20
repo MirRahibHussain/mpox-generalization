@@ -44,6 +44,9 @@ def main():
     ap.add_argument("--max-hours", type=float, default=0)
     ap.add_argument("--smoke", action="store_true", help="1 epoch, 1 model, 1 split per protocol")
     ap.add_argument("--train-dataset", default="", help="only P3 splits trained on this dataset")
+    ap.add_argument("--external", nargs="*", default=[],
+                    help="extra test sets NAME=images.csv (e.g. mcsi=data/external_mcsi/images_clean.csv); "
+                         "every trained model also predicts them")
     ap.add_argument("--order", choices=["method", "split"], default="method",
                     help="job order: all splits of one method first, or all methods of one split first "
                          "(with a time budget, 'split' leaves every method with the same finished splits)")
@@ -56,9 +59,14 @@ def main():
     pools = {"lookalike": a.pool, "control": a.control_pool, "atlas": a.atlas_pool}
     needed = {CONFIGS[m]["extra"] for m in a.methods + a.p2_methods if CONFIGS[m]["extra"]}
     pools = {k: pd.read_csv(v) for k, v in pools.items() if k in needed and Path(v).exists()}
+    external = {}
+    for item in a.external:
+        name, path = item.split("=", 1)
+        external[name] = pd.read_csv(path)
     if a.cache_dir:
         images = cache.build(images, a.cache_dir)
         pools = {k: cache.build(v, a.cache_dir) for k, v in pools.items()}
+        external = {k: cache.build(v, a.cache_dir) for k, v in external.items()}
     man = pd.read_csv(Path(a.splits) / "manifest.csv")
     man = man[man["task"] == "binary"]
     p3 = man[man["protocol"] == "P3"].sort_values(["train_dataset", "rep"])
@@ -94,11 +102,12 @@ def main():
         spec = json.loads((Path(a.splits) / f"{name}.json").read_text())
         extra = pools.get(CONFIGS[meth]["extra"]) if CONFIGS[meth]["extra"] else None
         rec = run_method(spec, images, mdl, seed=spec["rep"], out_dir=run_dir, method=meth, extra=extra,
-                         epochs=a.epochs, patience=a.patience, num_workers=a.workers)
+                         epochs=a.epochs, patience=a.patience, num_workers=a.workers, external=external)
         el = (time.time() - start) / 3600
         print(f"[{k}/{len(jobs)}] {name} {mdl} {meth}: bal_acc={rec['balanced_accuracy']:.3f} "
               f"sens={rec['mpox_sensitivity']:.3f} spec={rec['mpox_specificity']:.3f} "
-              f"({rec['minutes']} min; {el:.2f} h)", flush=True)
+              + "".join(f" | {n}: bal_acc={rec[n + '_balanced_accuracy']:.3f}" for n in external)
+              + f" ({rec['minutes']} min; {el:.2f} h)", flush=True)
     if skipped:
         print(f"[time budget] {skipped} runs not started")
     recs = [json.loads(p.read_text()) for p in out.glob("*/*/*/metrics.json")]

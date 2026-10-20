@@ -1,8 +1,10 @@
 """CPU checks of the method-study code on synthetic images (no training).
 
 Checks the tone-shift augmentation, tone-balanced sampling weights, the
-look-alike pool builder (including removal of a planted duplicate of a study
-image) and the summary script on fake predictions. If PyTorch is not
+look-alike, control and atlas pool builders (including removal of a planted
+duplicate of a study image), the FACTOR draw weights and sampler, the external
+MCSI indexer (including a planted crop and copy of a study image) and the
+summary scripts on fake predictions. If PyTorch is not
 installed, a tiny stand-in module is used so the non-training code can be
 imported. Nothing here is a research result.
 
@@ -139,6 +141,28 @@ def build_fake_fitz(base: Path, msld_img: Path):
     return d.parent, csv
 
 
+def build_fake_mcsi(base: Path, study_img: Path):
+    """Fake MCSI folder: 4 classes x 6 images, plus a crop+zoom of a study image and an exact copy."""
+    root = base / "MCSI"
+    (root / "images").mkdir(parents=True)
+    rows, tone = [], []
+    for cls, n in [("monkeypox", 6), ("chickenpox", 6), ("normal", 6), ("acne_l1", 6)]:
+        for k in range(n):
+            f = f"{cls}_{k}.png"
+            fake_image(int(RNG.integers(1e9)), k % 3).save(root / "images" / f)
+            rows.append({"diagnostic": cls, "img_id": f, "source": "Fake"})
+            tone.append({"Filename": f, "ITA": 20.0, "CLS": "tan1", "Type": "light"})
+    with Image.open(study_img) as im:
+        w, h = im.size
+        im.crop((w // 6, h // 6, w - w // 5, h - h // 5)).resize((300, 260)).save(root / "images" / "monkeypox_crop.png")
+        im.save(root / "images" / "monkeypox_copy.jpg", quality=80)
+    rows += [{"diagnostic": "monkeypox", "img_id": "monkeypox_crop.png", "source": "Fake"},
+             {"diagnostic": "monkeypox", "img_id": "monkeypox_copy.jpg", "source": "Fake"}]
+    pd.DataFrame(rows).to_csv(root / "metadata.csv", index=False)
+    pd.DataFrame(tone).to_csv(root / "skin_tone_labels.csv", index=False)
+    return root
+
+
 def main():
     check_tone_shift()
     check_sampling()
@@ -198,6 +222,16 @@ def main():
             for b in ["light", "intermediate", "dark"]:
                 if tgt[b] > 0 and (atl["ita_band"] == b).any():
                     assert abs(tgt[b] - got[b]) < 0.002, f"tone matching off for {ds}/{b}"
+        mcsi_root = build_fake_mcsi(tmp / "data", mpox_img)
+        run(["scripts/18_external_mcsi.py", "--root", str(mcsi_root), "--index", "data/index",
+             "--out", "data/external_mcsi"], work)
+        ext = pd.read_csv(work / "data/external_mcsi/images.csv")
+        clean = pd.read_csv(work / "data/external_mcsi/images_clean.csv")
+        dups = set(ext.loc[ext["duplicate_any"], "file"])
+        assert {"monkeypox_crop.png", "monkeypox_copy.jpg"} <= dups, f"planted MCSI duplicates not found: {dups}"
+        assert len(dups) <= 3, f"too many MCSI images flagged on fake data: {dups}"
+        assert not set(clean["file"]) & dups and set(clean["label"]) == {"mpox", "chickenpox", "healthy", "acne"}
+        print(f"MCSI: {len(ext)} images, flagged {sorted(dups)}, clean {len(clean)}")
         run(["scripts/12_tone_shift_check.py", "--index", "data/index", "--out", "results_methods",
              "--per-group", "4"], work)
         assert (work / "results_methods/tone_shift_check.md").exists()
@@ -223,6 +257,13 @@ def main():
                     if config(meth)["head"] == "factor":
                         pr["pd"], pr["pm"] = RNG.random(len(y)), RNG.random(len(y))
                     pr.to_csv(d / "predictions.csv", index=False)
+                    if r.protocol == "P3":
+                        pe = RNG.dirichlet(np.ones(2), len(clean))
+                        pm_ = pd.DataFrame({"image_id": clean["image_id"], "y_true": (clean["label"] == "mpox").astype(int),
+                                            "y_pred": pe.argmax(1), "p0": pe[:, 0], "p1": pe[:, 1]})
+                        if config(meth)["head"] == "factor":
+                            pm_["pd"], pm_["pm"] = RNG.random(len(clean)), RNG.random(len(clean))
+                        pm_.to_csv(d / "predictions_mcsi.csv", index=False)
                     pv = RNG.dirichlet(np.ones(2), len(yv))
                     pd.DataFrame({"image_id": spec["val"], "y_true": yv, "y_pred": pv.argmax(1),
                                   "p0": pv[:, 0], "p1": pv[:, 1]}).to_csv(d / "val_predictions.csv", index=False)
@@ -252,6 +293,17 @@ def main():
              "factor:erm", "factor:atlas", "--out", "results_methods/open_set_paired",
              "--metrics", "closed_bal_acc", "unseen_spec"], work)
         assert (work / "results_methods/open_set_paired.md").exists()
+        run(["scripts/19_external_eval.py", "--results", "results_methods",
+             "--external", "data/external_mcsi/images_clean.csv"], work)
+        er = pd.read_csv(work / "results_methods/external_runs.csv")
+        assert set(er["direction"]) == {"msid->mcsi", "msld_v2->mcsi"} and set(er["method"]) == set(CONFIGS)
+        assert er["called_acne"].notna().all() and er["shortcut_gap"].notna().all()
+        assert er.loc[er["method"] == "factor", "factor_mpox_auroc"].notna().all()
+        run(["scripts/13_paired_stats.py", "--runs", "results_methods/external_runs.csv", "--pairs",
+             "factor:erm", "atlas:erm", "--out", "results_methods/external_paired",
+             "--metrics", "balanced_accuracy", "called_acne"], work)
+        eps = pd.read_csv(work / "results_methods/external_paired.csv")
+        assert set(eps["direction"]) == {"msid->mcsi", "msld_v2->mcsi"}, "paired stats should cover the external directions"
         for f in ("methods_tables.md", "table_p3_methods.csv", "table_tone_methods.csv",
                   "table_called_mpox_methods.csv", "table_p2_methods.csv", "table_tests.csv", "fig_methods.png"):
             assert (work / "results_methods" / f).exists(), f
