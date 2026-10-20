@@ -235,7 +235,7 @@ def _predict_head(model, loader, device, head):
 def run_method(spec: dict, images: pd.DataFrame, model_name: str, seed: int, out_dir: Path,
                method: str, extra: pd.DataFrame | None = None, epochs: int = 30, patience: int = 7,
                batch_size: int = 32, size: int = 224, num_workers: int = 2,
-               pretrained: bool = True) -> dict:
+               pretrained: bool = True, external: dict | None = None) -> dict:
     """Like ``run`` but with one of the training methods in ``methods.CONFIGS``.
 
     ``images`` needs an ``ita_band`` column. ``extra`` holds the auxiliary pool
@@ -244,7 +244,9 @@ def run_method(spec: dict, images: pd.DataFrame, model_name: str, seed: int, out
     validation or test. A static pool is added to every epoch; the atlas is
     sampled anew every epoch (factor.EpochSampler). Validation predictions of
     the best model are saved too, so decision thresholds can be chosen on
-    validation data (scripts/11_operating_points.py).
+    validation data (scripts/11_operating_points.py). ``external`` maps a name to
+    a table of extra test images (e.g. a third dataset); the best model also
+    predicts these, written to predictions_<name>.csv, with <name>_* metrics.
     """
     from torch.utils.data import WeightedRandomSampler
 
@@ -413,6 +415,20 @@ def run_method(spec: dict, images: pd.DataFrame, model_name: str, seed: int, out
         vpred[k_] = v_
     vpred.to_csv(out_dir / "val_predictions.csv", index=False)
     pd.DataFrame(history).to_csv(out_dir / "history.csv", index=False)
+    ext_metrics = {}
+    for name, edf in (external or {}).items():
+        ys_e = [task_target(l, task) for l in edf["label"]]
+        dl_e = DataLoader(ImageTable(edf["path"].tolist(), ys_e, tf_test), batch_size=batch_size,
+                          num_workers=num_workers, pin_memory=True)
+        ye, pe, exe = _predict_head(model, dl_e, device, head)
+        epred = pd.DataFrame({"image_id": edf["image_id"].tolist(), "y_true": ye, "y_pred": pe.argmax(1)})
+        for c in range(pe.shape[1]):
+            epred[f"p{c}"] = pe[:, c]
+        for k_, v_ in exe.items():
+            epred[k_] = v_
+        epred.to_csv(out_dir / f"predictions_{name}.csv", index=False)
+        ext_metrics.update({f"{name}_{k}": v for k, v in metrics.compute(ye, pe, pos).items()})
+        ext_metrics[f"{name}_n"] = len(ye)
     record = {
         "protocol": spec["protocol"], "task": task, "rep": spec["rep"],
         "train_dataset": spec["train_dataset"], "test_dataset": spec["test_dataset"],
@@ -425,6 +441,7 @@ def run_method(spec: dict, images: pd.DataFrame, model_name: str, seed: int, out
         **res,
         **{f"{k}_ci_low": v[0] for k, v in ci.items()},
         **{f"{k}_ci_high": v[1] for k, v in ci.items()},
+        **ext_metrics,
     }
     (out_dir / "metrics.json").write_text(json.dumps(record, indent=2))
     return record

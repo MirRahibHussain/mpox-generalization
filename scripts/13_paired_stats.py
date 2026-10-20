@@ -59,7 +59,7 @@ def main():
     runs = pd.read_csv(a.runs)
     p3 = runs[runs["protocol"] == "P3"]
     rows = []
-    for d in [x for x in DIRS if x in set(p3["direction"])]:
+    for d in [x for x in DIRS if x in set(p3["direction"])] + sorted(set(p3["direction"]) - set(DIRS)):
         sub = p3[p3["direction"] == d]
         for metric in a.metrics:
             piv = sub.pivot_table(index=["model", "rep"], columns="method", values=metric)

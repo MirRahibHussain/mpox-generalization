@@ -158,6 +158,20 @@ the skin-tone proxy (`scripts/16`), an open-set analysis of seen vs unseen negat
 
 Results will be added to `paper_results/factor/` whatever they show.
 
+### External test on a third dataset (MCSI), pre-registered
+
+`PREREGISTRATION_MCSI.md` fixes the data cleaning, methods, hypotheses and statistics before any
+model sees MCSI (Mpox Close Skin Images, Campana et al.; Zenodo 8360076, CC BY 4.0; 400 images:
+mpox, chickenpox, acne, healthy). `scripts/18_external_mcsi.py` downloads it and removes every image
+that copies an MSLD v2.0 or MSID image, with a crop-aware audit (pHash/dHash, embedding similarity,
+and ORB keypoints with a RANSAC homography for cropped and zoomed copies). `scripts/19_external_eval.py`
+reports accuracy, the share of acne called mpox and the *disease-presence shortcut*: AUROC of the
+mpox score against healthy skin minus AUROC against other diseases.
+
+```
+!git clone -q https://github.com/MirRahibHussain/mpox-generalization.git && bash mpox-generalization/run_external.sh
+```
+
 ## Pipeline
 
 ```bash
@@ -183,6 +197,7 @@ python scripts/12_tone_shift_check.py --index data/index --out results_control
 # 13. paired statistics per direction: bootstrap CIs, exact Wilcoxon, Holm correction
 python scripts/13_paired_stats.py --runs results_control/all_runs.csv --pairs la:erm rand:erm tale:erm la:rand tale:rand tale:la
 # 15-17. FACTOR study: whole-atlas pool, ITA vs Fitzpatrick check, open-set analysis (see run_factor.sh)
+# 18-19. external MCSI test set with crop-aware duplicate audit, and its analysis (see run_external.sh)
 # 14. blinded Grad-CAM rating by people, then Cohen's kappa between raters
 python scripts/14_gradcam_rating_kit.py make --results results --ratings paper_results/gradcam_ratings.csv --out gradcam_blind
 python scripts/14_gradcam_rating_kit.py agree --key gradcam_blind/key.csv --sheets rater_A.csv rater_B.csv --ai paper_results/gradcam_ratings.csv
