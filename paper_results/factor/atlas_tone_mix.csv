@@ -1,0 +1,7 @@
+dataset,draw,light,intermediate,dark,unknown
+msid,mpox images (target),0.318,0.242,0.419,0.022
+msid,"atlas, cond",0.34,0.338,0.315,0.008
+msid,"atlas, cond_tone",0.318,0.242,0.419,0.022
+msld_v2,mpox images (target),0.335,0.246,0.419,0.0
+msld_v2,"atlas, cond",0.34,0.338,0.315,0.008
+msld_v2,"atlas, cond_tone",0.335,0.246,0.419,0.0

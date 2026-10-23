@@ -1,0 +1,886 @@
+== [06:03:25 UTC, +0 min] environment
+torch 2.11.0+cu128 | timm 1.0.29 | cuda True
+name, memory.total [MiB]
+Tesla T4, 15360 MiB
+Tesla T4, 15360 MiB
+code version: f7bc898 FACTOR study: factorized head, condition-diverse tone-matched atlas exposure, HOD baseline, ITA validation, open-set analysis
+== [06:03:42 UTC, +0 min] 0. locate datasets
+MSLD=/kaggle/input/datasets/joydippaul/mpox-skin-lesion-dataset-version-20-msld-v20
+MSID=/kaggle/input/datasets/dipuiucse/monkeypoxskinimagedataset
+FITZ=/kaggle/input/datasets/mobaswiralfarabi/fitzpatrick17k-original
+== [06:03:44 UTC, +0 min] 1-4. index, embeddings, duplicate audit + ITA, splits (same as the evaluation study)
+Indexing msld_v2 from /kaggle/input/datasets/joydippaul/mpox-skin-lesion-dataset-version-20-msld-v20
+  3775 files -> 754 unique images
+  [check] expected 755 unique images for msld_v2, found 754. Inspect index_report.txt before continuing.
+Indexing msid from /kaggle/input/datasets/dipuiucse/monkeypoxskinimagedataset
+  770 files -> 765 unique images
+msid: 765 unique images
+    healthy     292
+    mpox        277
+    chickenpox  106
+    measles     90
+msld_v2: 754 unique images
+    mpox        284
+    hfmd        161
+    healthy     114
+    chickenpox  74
+    cowpox      66
+    measles     55
+    fold 1: train=536 val=144 test=74
+    fold 2: train=508 val=164 test=82
+    fold 3: train=538 val=153 test=64
+    fold 4: train=524 val=150 test=81
+    fold 5: train=538 val=154 test=63
+
+Example file names:
+  msld_v2: CHP_08_01.jpg  ->  patient_hint=CHP_08
+  msld_v2: CHP_08_02.jpg  ->  patient_hint=CHP_08
+  msld_v2: CHP_14_01.jpg  ->  patient_hint=CHP_14
+  msid: chickenpox1.png  ->  patient_hint=chickenpox
+  msid: chickenpox10.png  ->  patient_hint=chickenpox
+  msid: chickenpox100.png  ->  patient_hint=chickenpox
+
+73 candidate pairs; 23 auto-accepted (cos >= 0.97); 50 need review (50 drawn on embedding_review_sheet.png)
+Hashing 1519 images ...
+  hashed 250/1519
+  hashed 500/1519
+  hashed 750/1519
+  hashed 1000/1519
+  hashed 1250/1519
+  hashed 1500/1519
+  + 23 accepted embedding pairs
+        scope  images  images_in_duplicate_groups  pairs  label_mismatch_pairs
+         msid   765.0                          76     18                     1
+      msld_v2   754.0                          51      3                     0
+cross-dataset     NaN                          95     67                     0
+Estimating ITA ...
+ita_band            dark  intermediate  light  unknown
+dataset label                                         
+msid    chickenpox     7            16     83        0
+        healthy       32            45    215        0
+        measles       29            22     39        0
+        mpox         116            67     88        6
+msld_v2 chickenpox    12            22     40        0
+        cowpox        16            22     28        0
+        healthy       30            33     51        0
+        hfmd          31            43     87        0
+        measles       12             8     35        0
+        mpox         119            70     95        0
+Wrote 52 splits. P2/P3: no shared images or duplicate groups.
+P1 (naive): duplicate groups shared by train(+val) and test, mean per split:
+task    train_dataset
+4class  msid             2.0
+        msld_v2          0.0
+binary  msid             3.4
+        msld_v2          0.2
+== [06:10:28 UTC, +7 min] 8. look-alike pool and matched control pool (for 'rand' and 'factor_static')
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Sampled 1200 look-alike images from 24 conditions
+sampled: 1200 images, 24 conditions, up to 50 each
+removed as hash duplicates of study images or of each other: 5
+removed by embedding cosine >= 0.92 with a study image: 0
+final pool: 1195 images
+
+by condition:
+condition
+acne                                                     50
+acne vulgaris                                            50
+acquired autoimmune bullous diseaseherpes gestationis    50
+dariers disease                                          50
+epidermolysis bullosa                                    50
+fixed eruptions                                          50
+hailey hailey disease                                    50
+folliculitis                                             50
+pityriasis rosea                                         50
+prurigo nodularis                                        50
+keratosis pilaris                                        50
+milia                                                    50
+myiasis                                                  50
+nematode infection                                       50
+neurotic excoriations                                    50
+pityriasis lichenoides chronica                          50
+stevens johnson syndrome                                 50
+tick bite                                                50
+pustular psoriasis                                       50
+scabies                                                  50
+tungiasis                                                50
+urticaria                                                50
+erythema multiforme                                      48
+drug eruption                                            47
+
+by Fitzpatrick type:
+fitzpatrick
+-1     70
+ 1    207
+ 2    255
+ 3    230
+ 4    218
+ 5    143
+ 6     72
+
+by ITA band:
+ita_band
+intermediate    437
+dark            393
+light           355
+unknown          10
+control candidates drawn: 1258 (target 1195 plus 5% margin)
+removed as duplicates of study images or of each other: 6 (hash), 0 (embedding)
+final control pool: 1195 images from 90 conditions
+
+Fitzpatrick type, look-alike vs control:
+             look-alike pool  control pool
+fitzpatrick                               
+-1                        70            70
+ 1                       207           207
+ 2                       255           255
+ 3                       230           230
+ 4                       218           218
+ 5                       143           143
+ 6                        72            72
+
+control by ITA band:
+ita_band
+dark            429
+intermediate    383
+light           369
+unknown          14
+
+control conditions (top 40):
+condition
+melanoma                           21
+kaposi sarcoma                     21
+scleroderma                        20
+acanthosis nigricans               19
+sarcoidosis                        19
+pilar cyst                         18
+fordyce spots                      18
+sun damaged skin                   18
+xeroderma pigmentosum              18
+pityriasis rubra pilaris           18
+necrobiosis lipoidica              18
+lymphangioma                       18
+psoriasis                          17
+calcinosis cutis                   17
+nevocytic nevus                    17
+keloid                             17
+urticaria pigmentosa               16
+lupus subacute                     16
+lichen planus                      16
+lyme disease                       16
+nevus sebaceous of jadassohn       16
+factitial dermatitis               16
+mycosis fungoides                  16
+neutrophilic dermatoses            15
+aplasia cutis                      15
+striae                             15
+basal cell carcinoma               15
+actinic keratosis                  15
+squamous cell carcinoma            15
+lichen amyloidosis                 15
+pyogenic granuloma                 15
+neurodermatitis                    15
+drug induced pigmentary changes    15
+dermatomyositis                    14
+congenital nevus                   14
+granuloma annulare                 14
+syringoma                          14
+epidermal nevus                    14
+granuloma pyogenic                 14
+seborrheic dermatitis              14
+== [06:16:21 UTC, +12 min] 15. whole-atlas pool (duplicates of study images removed, ITA per image)
+atlas: 16557 images from 114 conditions
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+atlas images (usable, exact duplicates dropped): 16557 from 114 conditions
+removed as hash duplicates of study images: 0
+removed by embedding cosine >= 0.92 with a study image (not already caught by hashes): 0
+final atlas pool: 16557 images from 114 conditions
+images per condition: median 102, min 53, max 653
+
+by Fitzpatrick type:
+fitzpatrick
+-1     562
+ 1    2944
+ 2    4804
+ 3    3306
+ 4    2780
+ 5    1529
+ 6     632
+
+by ITA band:
+ita_band
+intermediate    5752
+dark            5437
+light           5249
+unknown          119
+
+conditions (largest 30):
+condition
+psoriasis                      653
+squamous cell carcinoma        580
+lichen planus                  491
+basal cell carcinoma           468
+allergic contact dermatitis    430
+lupus erythematosus            410
+neutrophilic dermatoses        358
+sarcoidosis                    349
+photodermatoses                348
+folliculitis                   340
+scabies                        339
+acne vulgaris                  335
+scleroderma                    309
+pityriasis rubra pilaris       278
+melanoma                       261
+nematode infection             260
+erythema multiforme            236
+granuloma annulare             209
+eczema                         204
+drug eruption                  199
+pityriasis rosea               193
+neurofibromatosis              189
+porokeratosis actinic          183
+mycosis fungoides              182
+acne                           182
+actinic keratosis              175
+hailey hailey disease          174
+prurigo nodularis              170
+vitiligo                       165
+keloid                         156
+== [06:44:46 UTC, +41 min] 16. ITA proxy vs annotated Fitzpatrick type; tone-matching check (CPU)
+# ITA proxy check on Fitzpatrick17k (atlas pool)
+
+Images with both an FST label and an ITA estimate: 15902 of 16557 (ITA could not be estimated for 119; FST missing for 562).
+
+Spearman rho(ITA, FST) = -0.487 (95% bootstrap CI -0.501 to -0.474; p = 0).
+
+## ITA by Fitzpatrick skin type
+| FST | n | ITA Q1 | ITA median | ITA Q3 |
+| --- | --- | --- | --- | --- |
+| 1 | 2907 | 32.4 | 55.9 | 69.0 |
+| 2 | 4773 | 12.5 | 35.8 | 54.1 |
+| 3 | 3299 | 7.6 | 24.6 | 38.4 |
+| 4 | 2777 | -3.9 | 13.0 | 26.2 |
+| 5 | 1523 | -24.3 | -2.5 | 15.4 |
+| 6 | 623 | -56.5 | -35.5 | -1.0 |
+
+## ITA band vs FST group (rows: FST 1-2 / 3-4 / 5-6; columns: ITA band)
+| FST group | light | intermediate | dark |
+| --- | --- | --- | --- |
+| light | 4010 | 2143 | 1527 |
+| intermediate | 946 | 3011 | 2119 |
+| dark | 151 | 460 | 1535 |
+
+Agreement 0.538; linearly weighted kappa 0.345; light/dark swapped in 0.106 of images.
+
+## ITA-band mix: mpox images vs expected atlas draw (all mpox images of the dataset; training splits are subsets)
+| dataset | draw | light | intermediate | dark | unknown |
+| --- | --- | --- | --- | --- | --- |
+| msid | mpox images (target) | 0.318 | 0.242 | 0.419 | 0.022 |
+| msid | atlas, cond | 0.34 | 0.338 | 0.315 | 0.008 |
+| msid | atlas, cond_tone | 0.318 | 0.242 | 0.419 | 0.022 |
+| msld_v2 | mpox images (target) | 0.335 | 0.246 | 0.419 | 0.0 |
+| msld_v2 | atlas, cond | 0.34 | 0.338 | 0.315 | 0.008 |
+| msld_v2 | atlas, cond_tone | 0.335 | 0.246 | 0.419 | 0.0 |
+
+== [06:44:58 UTC, +41 min] 9a. smoke test (1 epoch, every new method and both heads)
+Image cache: 1519 new, 0 reused -> /tmp/mpoxgen_img288
+Image cache: 1195 new, 0 reused -> /tmp/mpoxgen_img288
+Image cache: 15362 new, 1195 reused -> /tmp/mpoxgen_img288
+17 runs -> results_methods_smoke/  (pools: control 1195, atlas 16557)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[1/17] binary_P3_msid_to_msld_v2_rep0 mobilenetv3_large_100 erm: bal_acc=0.599 sens=0.956 spec=0.241 (0.4 min; 0.75 h)
+[2/17] binary_P3_msld_v2_to_msid_rep0 mobilenetv3_large_100 erm: bal_acc=0.673 sens=0.750 spec=0.596 (0.18 min; 0.75 h)
+[3/17] binary_P3_msid_to_msld_v2_rep0 mobilenetv3_large_100 factor: bal_acc=0.709 sens=0.892 spec=0.526 (0.18 min; 0.75 h)
+[4/17] binary_P3_msld_v2_to_msid_rep0 mobilenetv3_large_100 factor: bal_acc=0.741 sens=0.566 spec=0.915 (0.18 min; 0.76 h)
+[5/17] binary_P3_msid_to_msld_v2_rep0 mobilenetv3_large_100 atlas: bal_acc=0.655 sens=0.976 spec=0.333 (0.18 min; 0.76 h)
+[6/17] binary_P3_msld_v2_to_msid_rep0 mobilenetv3_large_100 atlas: bal_acc=0.801 sens=0.713 spec=0.888 (0.17 min; 0.76 h)
+[7/17] binary_P3_msid_to_msld_v2_rep0 mobilenetv3_large_100 hod: bal_acc=0.717 sens=0.825 spec=0.610 (0.18 min; 0.77 h)
+[8/17] binary_P3_msld_v2_to_msid_rep0 mobilenetv3_large_100 hod: bal_acc=0.840 sens=0.770 spec=0.909 (0.18 min; 0.77 h)
+[9/17] binary_P3_msid_to_msld_v2_rep0 mobilenetv3_large_100 rand: bal_acc=0.672 sens=0.916 spec=0.428 (0.18 min; 0.77 h)
+[10/17] binary_P3_msld_v2_to_msid_rep0 mobilenetv3_large_100 rand: bal_acc=0.721 sens=0.516 spec=0.926 (0.17 min; 0.77 h)
+[11/17] binary_P3_msid_to_msld_v2_rep0 mobilenetv3_large_100 factor_notone: bal_acc=0.633 sens=0.952 spec=0.314 (0.18 min; 0.78 h)
+[12/17] binary_P3_msld_v2_to_msid_rep0 mobilenetv3_large_100 factor_notone: bal_acc=0.747 sens=0.607 spec=0.888 (0.18 min; 0.78 h)
+[13/17] binary_P3_msid_to_msld_v2_rep0 mobilenetv3_large_100 factor_static: bal_acc=0.667 sens=0.845 spec=0.489 (0.18 min; 0.78 h)
+[14/17] binary_P3_msld_v2_to_msid_rep0 mobilenetv3_large_100 factor_static: bal_acc=0.713 sens=0.516 spec=0.909 (0.18 min; 0.79 h)
+[15/17] binary_P3_msid_to_msld_v2_rep0 mobilenetv3_large_100 div5: bal_acc=0.694 sens=0.853 spec=0.535 (0.18 min; 0.79 h)
+[16/17] binary_P3_msld_v2_to_msid_rep0 mobilenetv3_large_100 div5: bal_acc=0.769 sens=0.684 spec=0.854 (0.18 min; 0.79 h)
+[17/17] binary_P2_msid_to_msid_rep0 mobilenetv3_large_100 factor: bal_acc=0.861 sens=0.862 spec=0.860 (0.25 min; 0.80 h)
+Collected 17 runs into results_methods_smoke/all_runs.csv
+== [06:51:16 UTC, +47 min] 9b. main comparison on P3 (time budget 10.5 h; all methods of a split before the next split)
+Image cache: 0 new, 1519 reused -> /tmp/mpoxgen_img288
+Image cache: 0 new, 1195 reused -> /tmp/mpoxgen_img288
+Image cache: 0 new, 16557 reused -> /tmp/mpoxgen_img288
+126 runs -> results_factor/  (pools: control 1195, atlas 16557)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[1/126] binary_P3_msid_to_msld_v2_rep0 resnet50 erm: bal_acc=0.673 sens=0.944 spec=0.401 (1.3 min; 0.82 h)
+[2/126] binary_P3_msid_to_msld_v2_rep0 resnet50 factor: bal_acc=0.756 sens=0.928 spec=0.583 (2.94 min; 0.87 h)
+[3/126] binary_P3_msid_to_msld_v2_rep0 resnet50 atlas: bal_acc=0.738 sens=0.952 spec=0.524 (1.93 min; 0.90 h)
+[4/126] binary_P3_msid_to_msld_v2_rep0 resnet50 hod: bal_acc=0.727 sens=0.912 spec=0.542 (1.79 min; 0.93 h)
+[5/126] binary_P3_msid_to_msld_v2_rep0 resnet50 rand: bal_acc=0.737 sens=0.972 spec=0.502 (2.22 min; 0.97 h)
+[6/126] binary_P3_msid_to_msld_v2_rep0 resnet50 factor_notone: bal_acc=0.744 sens=0.976 spec=0.511 (2.5 min; 1.01 h)
+[7/126] binary_P3_msid_to_msld_v2_rep0 resnet50 factor_static: bal_acc=0.732 sens=0.896 spec=0.568 (3.19 min; 1.06 h)
+[8/126] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0 erm: bal_acc=0.686 sens=0.904 spec=0.467 (0.69 min; 1.08 h)
+[9/126] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0 factor: bal_acc=0.697 sens=0.916 spec=0.478 (1.29 min; 1.10 h)
+[10/126] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0 atlas: bal_acc=0.683 sens=0.908 spec=0.458 (0.98 min; 1.11 h)
+[11/126] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0 hod: bal_acc=0.789 sens=0.793 spec=0.785 (1.67 min; 1.14 h)
+[12/126] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0 rand: bal_acc=0.731 sens=0.920 spec=0.542 (1.17 min; 1.16 h)
+[13/126] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0 factor_notone: bal_acc=0.730 sens=0.932 spec=0.529 (1.79 min; 1.19 h)
+[14/126] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0 factor_static: bal_acc=0.737 sens=0.896 spec=0.577 (1.7 min; 1.22 h)
+[15/126] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224 erm: bal_acc=0.785 sens=0.912 spec=0.658 (0.56 min; 1.23 h)
+[16/126] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224 factor: bal_acc=0.770 sens=0.964 spec=0.577 (1.44 min; 1.25 h)
+[17/126] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224 atlas: bal_acc=0.782 sens=0.873 spec=0.691 (1.32 min; 1.28 h)
+[18/126] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224 hod: bal_acc=0.803 sens=0.857 spec=0.750 (1.67 min; 1.30 h)
+[19/126] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224 rand: bal_acc=0.723 sens=0.944 spec=0.502 (1.21 min; 1.33 h)
+[20/126] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224 factor_notone: bal_acc=0.805 sens=0.892 spec=0.717 (1.11 min; 1.34 h)
+[21/126] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224 factor_static: bal_acc=0.741 sens=0.960 spec=0.522 (1.11 min; 1.36 h)
+[22/126] binary_P3_msid_to_msld_v2_rep1 resnet50 erm: bal_acc=0.635 sens=0.980 spec=0.289 (0.85 min; 1.38 h)
+[23/126] binary_P3_msid_to_msld_v2_rep1 resnet50 factor: bal_acc=0.704 sens=0.976 spec=0.432 (2.5 min; 1.42 h)
+[24/126] binary_P3_msid_to_msld_v2_rep1 resnet50 atlas: bal_acc=0.750 sens=0.829 spec=0.671 (3.32 min; 1.47 h)
+[25/126] binary_P3_msid_to_msld_v2_rep1 resnet50 hod: bal_acc=0.745 sens=0.825 spec=0.664 (4.03 min; 1.54 h)
+[26/126] binary_P3_msid_to_msld_v2_rep1 resnet50 rand: bal_acc=0.740 sens=0.857 spec=0.623 (2.62 min; 1.59 h)
+[27/126] binary_P3_msid_to_msld_v2_rep1 resnet50 factor_notone: bal_acc=0.707 sens=0.992 spec=0.421 (2.08 min; 1.62 h)
+[28/126] binary_P3_msid_to_msld_v2_rep1 resnet50 factor_static: bal_acc=0.702 sens=0.996 spec=0.408 (1.94 min; 1.65 h)
+[29/126] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0 erm: bal_acc=0.672 sens=0.884 spec=0.461 (0.79 min; 1.67 h)
+[30/126] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0 factor: bal_acc=0.767 sens=0.841 spec=0.693 (1.67 min; 1.69 h)
+[31/126] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0 atlas: bal_acc=0.737 sens=0.884 spec=0.590 (1.66 min; 1.72 h)
+[32/126] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0 hod: bal_acc=0.758 sens=0.892 spec=0.623 (1.08 min; 1.74 h)
+[33/126] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0 rand: bal_acc=0.682 sens=0.916 spec=0.447 (0.88 min; 1.75 h)
+[34/126] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0 factor_notone: bal_acc=0.751 sens=0.892 spec=0.610 (1.57 min; 1.78 h)
+[35/126] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0 factor_static: bal_acc=0.793 sens=0.904 spec=0.682 (2.27 min; 1.82 h)
+[36/126] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224 erm: bal_acc=0.709 sens=0.944 spec=0.474 (0.55 min; 1.83 h)
+[37/126] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224 factor: bal_acc=0.800 sens=0.773 spec=0.827 (1.76 min; 1.86 h)
+[38/126] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224 atlas: bal_acc=0.763 sens=0.896 spec=0.629 (1.42 min; 1.88 h)
+[39/126] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224 hod: bal_acc=0.797 sens=0.869 spec=0.726 (1.33 min; 1.90 h)
+[40/126] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224 rand: bal_acc=0.737 sens=0.789 spec=0.684 (1.21 min; 1.92 h)
+[41/126] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224 factor_notone: bal_acc=0.803 sens=0.857 spec=0.750 (1.33 min; 1.95 h)
+[42/126] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224 factor_static: bal_acc=0.698 sens=0.956 spec=0.441 (1.0 min; 1.96 h)
+[43/126] binary_P3_msid_to_msld_v2_rep2 resnet50 erm: bal_acc=0.703 sens=0.956 spec=0.450 (1.24 min; 1.98 h)
+[44/126] binary_P3_msid_to_msld_v2_rep2 resnet50 factor: bal_acc=0.731 sens=0.948 spec=0.513 (2.08 min; 2.02 h)
+[45/126] binary_P3_msid_to_msld_v2_rep2 resnet50 atlas: bal_acc=0.749 sens=0.904 spec=0.594 (1.93 min; 2.05 h)
+[46/126] binary_P3_msid_to_msld_v2_rep2 resnet50 hod: bal_acc=0.748 sens=0.908 spec=0.588 (2.77 min; 2.10 h)
+[47/126] binary_P3_msid_to_msld_v2_rep2 resnet50 rand: bal_acc=0.766 sens=0.833 spec=0.700 (3.19 min; 2.15 h)
+[48/126] binary_P3_msid_to_msld_v2_rep2 resnet50 factor_notone: bal_acc=0.746 sens=0.888 spec=0.603 (3.07 min; 2.20 h)
+[49/126] binary_P3_msid_to_msld_v2_rep2 resnet50 factor_static: bal_acc=0.765 sens=0.857 spec=0.673 (3.21 min; 2.26 h)
+[50/126] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0 erm: bal_acc=0.688 sens=0.920 spec=0.456 (0.68 min; 2.27 h)
+[51/126] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0 factor: bal_acc=0.739 sens=0.904 spec=0.575 (1.6 min; 2.29 h)
+[52/126] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0 atlas: bal_acc=0.759 sens=0.817 spec=0.702 (1.67 min; 2.32 h)
+[53/126] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0 hod: bal_acc=0.783 sens=0.845 spec=0.721 (1.8 min; 2.35 h)
+[54/126] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0 rand: bal_acc=0.736 sens=0.849 spec=0.623 (1.09 min; 2.37 h)
+[55/126] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0 factor_notone: bal_acc=0.766 sens=0.896 spec=0.636 (1.41 min; 2.39 h)
+[56/126] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0 factor_static: bal_acc=0.717 sens=0.896 spec=0.537 (1.3 min; 2.42 h)
+[57/126] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224 erm: bal_acc=0.765 sens=0.904 spec=0.625 (0.61 min; 2.43 h)
+[58/126] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224 factor: bal_acc=0.784 sens=0.785 spec=0.783 (2.66 min; 2.47 h)
+[59/126] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224 atlas: bal_acc=0.784 sens=0.817 spec=0.752 (2.08 min; 2.51 h)
+[60/126] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224 hod: bal_acc=0.784 sens=0.813 spec=0.754 (2.12 min; 2.54 h)
+[61/126] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224 rand: bal_acc=0.788 sens=0.789 spec=0.787 (1.97 min; 2.57 h)
+[62/126] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224 factor_notone: bal_acc=0.795 sens=0.825 spec=0.765 (2.11 min; 2.61 h)
+[63/126] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224 factor_static: bal_acc=0.773 sens=0.857 spec=0.689 (1.22 min; 2.63 h)
+[64/126] binary_P3_msld_v2_to_msid_rep0 resnet50 erm: bal_acc=0.852 sens=0.734 spec=0.970 (1.41 min; 2.65 h)
+[65/126] binary_P3_msld_v2_to_msid_rep0 resnet50 factor: bal_acc=0.826 sens=0.680 spec=0.973 (3.65 min; 2.71 h)
+[66/126] binary_P3_msld_v2_to_msid_rep0 resnet50 atlas: bal_acc=0.846 sens=0.734 spec=0.958 (3.89 min; 2.78 h)
+[67/126] binary_P3_msld_v2_to_msid_rep0 resnet50 hod: bal_acc=0.825 sens=0.684 spec=0.966 (3.06 min; 2.83 h)
+[68/126] binary_P3_msld_v2_to_msid_rep0 resnet50 rand: bal_acc=0.847 sens=0.738 spec=0.956 (4.31 min; 2.90 h)
+[69/126] binary_P3_msld_v2_to_msid_rep0 resnet50 factor_notone: bal_acc=0.780 sens=0.607 spec=0.953 (2.66 min; 2.95 h)
+[70/126] binary_P3_msld_v2_to_msid_rep0 resnet50 factor_static: bal_acc=0.820 sens=0.668 spec=0.973 (4.35 min; 3.02 h)
+[71/126] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0 erm: bal_acc=0.834 sens=0.705 spec=0.964 (0.95 min; 3.04 h)
+[72/126] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0 factor: bal_acc=0.859 sens=0.795 spec=0.924 (2.22 min; 3.07 h)
+[73/126] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0 atlas: bal_acc=0.826 sens=0.689 spec=0.964 (2.48 min; 3.11 h)
+[74/126] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0 hod: bal_acc=0.854 sens=0.742 spec=0.966 (2.1 min; 3.15 h)
+[75/126] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0 rand: bal_acc=0.840 sens=0.730 spec=0.951 (1.69 min; 3.18 h)
+[76/126] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0 factor_notone: bal_acc=0.867 sens=0.795 spec=0.939 (1.41 min; 3.20 h)
+[77/126] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0 factor_static: bal_acc=0.823 sens=0.713 spec=0.932 (1.6 min; 3.23 h)
+[78/126] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224 erm: bal_acc=0.876 sens=0.762 spec=0.989 (1.06 min; 3.25 h)
+[79/126] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224 factor: bal_acc=0.880 sens=0.775 spec=0.985 (1.45 min; 3.27 h)
+[80/126] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224 atlas: bal_acc=0.856 sens=0.721 spec=0.992 (2.08 min; 3.31 h)
+[81/126] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224 hod: bal_acc=0.858 sens=0.734 spec=0.983 (2.23 min; 3.34 h)
+[82/126] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224 rand: bal_acc=0.859 sens=0.730 spec=0.989 (2.61 min; 3.39 h)
+[83/126] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224 factor_notone: bal_acc=0.884 sens=0.791 spec=0.977 (1.78 min; 3.42 h)
+[84/126] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224 factor_static: bal_acc=0.877 sens=0.787 spec=0.966 (1.56 min; 3.44 h)
+[85/126] binary_P3_msld_v2_to_msid_rep1 resnet50 erm: bal_acc=0.851 sens=0.742 spec=0.960 (1.07 min; 3.46 h)
+[86/126] binary_P3_msld_v2_to_msid_rep1 resnet50 factor: bal_acc=0.818 sens=0.676 spec=0.960 (3.5 min; 3.52 h)
+[87/126] binary_P3_msld_v2_to_msid_rep1 resnet50 atlas: bal_acc=0.839 sens=0.705 spec=0.973 (4.31 min; 3.59 h)
+[88/126] binary_P3_msld_v2_to_msid_rep1 resnet50 hod: bal_acc=0.810 sens=0.652 spec=0.968 (3.62 min; 3.65 h)
+[89/126] binary_P3_msld_v2_to_msid_rep1 resnet50 rand: bal_acc=0.841 sens=0.738 spec=0.945 (3.05 min; 3.70 h)
+[90/126] binary_P3_msld_v2_to_msid_rep1 resnet50 factor_notone: bal_acc=0.811 sens=0.656 spec=0.966 (4.2 min; 3.77 h)
+[91/126] binary_P3_msld_v2_to_msid_rep1 resnet50 factor_static: bal_acc=0.839 sens=0.705 spec=0.973 (4.05 min; 3.84 h)
+[92/126] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0 erm: bal_acc=0.805 sens=0.656 spec=0.953 (0.58 min; 3.85 h)
+[93/126] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0 factor: bal_acc=0.860 sens=0.779 spec=0.941 (3.1 min; 3.90 h)
+[94/126] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0 atlas: bal_acc=0.858 sens=0.750 spec=0.966 (1.88 min; 3.93 h)
+[95/126] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0 hod: bal_acc=0.873 sens=0.779 spec=0.968 (2.49 min; 3.98 h)
+[96/126] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0 rand: bal_acc=0.807 sens=0.639 spec=0.975 (2.08 min; 4.01 h)
+[97/126] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0 factor_notone: bal_acc=0.842 sens=0.721 spec=0.962 (1.8 min; 4.04 h)
+[98/126] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0 factor_static: bal_acc=0.872 sens=0.824 spec=0.920 (3.01 min; 4.09 h)
+[99/126] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224 erm: bal_acc=0.876 sens=0.766 spec=0.985 (1.19 min; 4.11 h)
+[100/126] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224 factor: bal_acc=0.850 sens=0.713 spec=0.987 (2.67 min; 4.16 h)
+[101/126] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224 atlas: bal_acc=0.829 sens=0.668 spec=0.989 (1.54 min; 4.18 h)
+[102/126] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224 hod: bal_acc=0.875 sens=0.816 spec=0.934 (2.02 min; 4.21 h)
+[103/126] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224 rand: bal_acc=0.861 sens=0.754 spec=0.968 (1.32 min; 4.24 h)
+[104/126] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224 factor_notone: bal_acc=0.860 sens=0.742 spec=0.979 (2.34 min; 4.28 h)
+[105/126] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224 factor_static: bal_acc=0.857 sens=0.750 spec=0.964 (1.56 min; 4.30 h)
+[106/126] binary_P3_msld_v2_to_msid_rep2 resnet50 erm: bal_acc=0.860 sens=0.750 spec=0.970 (1.51 min; 4.33 h)
+[107/126] binary_P3_msld_v2_to_msid_rep2 resnet50 factor: bal_acc=0.834 sens=0.734 spec=0.934 (1.95 min; 4.36 h)
+[108/126] binary_P3_msld_v2_to_msid_rep2 resnet50 atlas: bal_acc=0.849 sens=0.738 spec=0.960 (3.61 min; 4.42 h)
+[109/126] binary_P3_msld_v2_to_msid_rep2 resnet50 hod: bal_acc=0.821 sens=0.680 spec=0.962 (4.32 min; 4.49 h)
+[110/126] binary_P3_msld_v2_to_msid_rep2 resnet50 rand: bal_acc=0.856 sens=0.742 spec=0.970 (3.9 min; 4.56 h)
+[111/126] binary_P3_msld_v2_to_msid_rep2 resnet50 factor_notone: bal_acc=0.829 sens=0.697 spec=0.962 (4.34 min; 4.63 h)
+[112/126] binary_P3_msld_v2_to_msid_rep2 resnet50 factor_static: bal_acc=0.826 sens=0.697 spec=0.956 (4.06 min; 4.70 h)
+[113/126] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0 erm: bal_acc=0.802 sens=0.648 spec=0.956 (0.71 min; 4.71 h)
+[114/126] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0 factor: bal_acc=0.820 sens=0.693 spec=0.947 (2.42 min; 4.75 h)
+[115/126] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0 atlas: bal_acc=0.815 sens=0.672 spec=0.958 (1.2 min; 4.77 h)
+[116/126] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0 hod: bal_acc=0.848 sens=0.742 spec=0.953 (1.51 min; 4.80 h)
+[117/126] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0 rand: bal_acc=0.851 sens=0.742 spec=0.960 (1.9 min; 4.83 h)
+[118/126] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0 factor_notone: bal_acc=0.858 sens=0.762 spec=0.953 (3.13 min; 4.88 h)
+[119/126] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0 factor_static: bal_acc=0.860 sens=0.783 spec=0.937 (3.13 min; 4.93 h)
+[120/126] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224 erm: bal_acc=0.870 sens=0.746 spec=0.994 (0.93 min; 4.95 h)
+[121/126] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224 factor: bal_acc=0.880 sens=0.787 spec=0.973 (1.79 min; 4.98 h)
+[122/126] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224 atlas: bal_acc=0.867 sens=0.742 spec=0.992 (2.3 min; 5.02 h)
+[123/126] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224 hod: bal_acc=0.871 sens=0.762 spec=0.979 (2.12 min; 5.05 h)
+[124/126] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224 rand: bal_acc=0.879 sens=0.816 spec=0.943 (1.87 min; 5.08 h)
+[125/126] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224 factor_notone: bal_acc=0.853 sens=0.717 spec=0.989 (2.23 min; 5.12 h)
+[126/126] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224 factor_static: bal_acc=0.873 sens=0.795 spec=0.951 (2.12 min; 5.16 h)
+Collected 126 runs into results_factor/all_runs.csv
+== [11:12:53 UTC, +309 min] 9c. condition-diversity test (ResNet-50, MSID-trained, 3 seeds; 'atlas' = all conditions)
+Image cache: 0 new, 1519 reused -> /tmp/mpoxgen_img288
+Image cache: 0 new, 16557 reused -> /tmp/mpoxgen_img288
+6 runs -> results_factor/  (pools: atlas 16557)
+[1/6] binary_P3_msid_to_msld_v2_rep0 resnet50 div5: bal_acc=0.750 sens=0.952 spec=0.548 (2.24 min; 5.20 h)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2/6] binary_P3_msid_to_msld_v2_rep0 resnet50 div20: bal_acc=0.711 sens=0.956 spec=0.465 (1.93 min; 5.23 h)
+[3/6] binary_P3_msid_to_msld_v2_rep1 resnet50 div5: bal_acc=0.743 sens=0.916 spec=0.570 (2.07 min; 5.26 h)
+[4/6] binary_P3_msid_to_msld_v2_rep1 resnet50 div20: bal_acc=0.722 sens=0.928 spec=0.515 (1.94 min; 5.30 h)
+[5/6] binary_P3_msid_to_msld_v2_rep2 resnet50 div5: bal_acc=0.751 sens=0.845 spec=0.658 (3.89 min; 5.36 h)
+[6/6] binary_P3_msid_to_msld_v2_rep2 resnet50 div20: bal_acc=0.755 sens=0.845 spec=0.664 (4.3 min; 5.43 h)
+Collected 132 runs into results_factor/all_runs.csv
+== [11:29:28 UTC, +326 min] 9d. in-dataset (P2) check for ERM and FACTOR
+Image cache: 0 new, 1519 reused -> /tmp/mpoxgen_img288
+Image cache: 0 new, 16557 reused -> /tmp/mpoxgen_img288
+60 runs -> results_factor/  (pools: atlas 16557)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[1/60] binary_P2_msid_to_msid_rep0 resnet50 erm: bal_acc=0.933 sens=0.966 spec=0.900 (1.21 min; 5.46 h)
+[2/60] binary_P2_msid_to_msid_rep0 resnet50 factor: bal_acc=0.918 sens=0.897 spec=0.940 (4.14 min; 5.53 h)
+[3/60] binary_P2_msid_to_msid_rep0 efficientnet_b0 erm: bal_acc=0.928 sens=0.897 spec=0.960 (0.64 min; 5.54 h)
+[4/60] binary_P2_msid_to_msid_rep0 efficientnet_b0 factor: bal_acc=0.936 sens=0.931 spec=0.940 (2.1 min; 5.57 h)
+[5/60] binary_P2_msid_to_msid_rep0 vit_small_patch16_224 erm: bal_acc=0.963 sens=0.966 spec=0.960 (0.55 min; 5.58 h)
+[6/60] binary_P2_msid_to_msid_rep0 vit_small_patch16_224 factor: bal_acc=0.956 sens=0.931 spec=0.980 (2.74 min; 5.63 h)
+[7/60] binary_P2_msid_to_msid_rep1 resnet50 erm: bal_acc=0.930 sens=0.880 spec=0.980 (1.19 min; 5.65 h)
+[8/60] binary_P2_msid_to_msid_rep1 resnet50 factor: bal_acc=0.940 sens=0.920 spec=0.961 (3.73 min; 5.71 h)
+[9/60] binary_P2_msid_to_msid_rep1 efficientnet_b0 erm: bal_acc=0.881 sens=0.840 spec=0.922 (0.74 min; 5.72 h)
+[10/60] binary_P2_msid_to_msid_rep1 efficientnet_b0 factor: bal_acc=0.861 sens=0.800 spec=0.922 (2.0 min; 5.75 h)
+[11/60] binary_P2_msid_to_msid_rep1 vit_small_patch16_224 erm: bal_acc=0.930 sens=0.880 spec=0.980 (0.47 min; 5.76 h)
+[12/60] binary_P2_msid_to_msid_rep1 vit_small_patch16_224 factor: bal_acc=0.910 sens=0.840 spec=0.980 (2.11 min; 5.80 h)
+[13/60] binary_P2_msid_to_msid_rep2 resnet50 erm: bal_acc=0.951 sens=0.963 spec=0.939 (1.24 min; 5.82 h)
+[14/60] binary_P2_msid_to_msid_rep2 resnet50 factor: bal_acc=0.879 sens=0.963 spec=0.796 (1.71 min; 5.85 h)
+[15/60] binary_P2_msid_to_msid_rep2 efficientnet_b0 erm: bal_acc=0.904 sens=0.889 spec=0.918 (0.61 min; 5.86 h)
+[16/60] binary_P2_msid_to_msid_rep2 efficientnet_b0 factor: bal_acc=0.895 sens=0.852 spec=0.939 (1.91 min; 5.89 h)
+[17/60] binary_P2_msid_to_msid_rep2 vit_small_patch16_224 erm: bal_acc=0.932 sens=0.926 spec=0.939 (0.77 min; 5.90 h)
+[18/60] binary_P2_msid_to_msid_rep2 vit_small_patch16_224 factor: bal_acc=0.941 sens=0.963 spec=0.918 (1.26 min; 5.92 h)
+[19/60] binary_P2_msid_to_msid_rep3 resnet50 erm: bal_acc=0.921 sens=0.862 spec=0.979 (1.3 min; 5.95 h)
+[20/60] binary_P2_msid_to_msid_rep3 resnet50 factor: bal_acc=0.872 sens=0.828 spec=0.917 (1.98 min; 5.98 h)
+[21/60] binary_P2_msid_to_msid_rep3 efficientnet_b0 erm: bal_acc=0.924 sens=0.931 spec=0.917 (0.65 min; 5.99 h)
+[22/60] binary_P2_msid_to_msid_rep3 efficientnet_b0 factor: bal_acc=0.966 sens=0.931 spec=1.000 (2.76 min; 6.04 h)
+[23/60] binary_P2_msid_to_msid_rep3 vit_small_patch16_224 erm: bal_acc=0.917 sens=0.897 spec=0.938 (0.47 min; 6.04 h)
+[24/60] binary_P2_msid_to_msid_rep3 vit_small_patch16_224 factor: bal_acc=0.945 sens=0.931 spec=0.958 (2.01 min; 6.08 h)
+[25/60] binary_P2_msid_to_msid_rep4 resnet50 erm: bal_acc=0.923 sens=0.931 spec=0.915 (1.18 min; 6.10 h)
+[26/60] binary_P2_msid_to_msid_rep4 resnet50 factor: bal_acc=0.895 sens=0.897 spec=0.894 (2.26 min; 6.14 h)
+[27/60] binary_P2_msid_to_msid_rep4 efficientnet_b0 erm: bal_acc=0.927 sens=0.897 spec=0.957 (0.54 min; 6.14 h)
+[28/60] binary_P2_msid_to_msid_rep4 efficientnet_b0 factor: bal_acc=0.867 sens=0.862 spec=0.872 (1.36 min; 6.17 h)
+[29/60] binary_P2_msid_to_msid_rep4 vit_small_patch16_224 erm: bal_acc=0.927 sens=0.897 spec=0.957 (0.4 min; 6.17 h)
+[30/60] binary_P2_msid_to_msid_rep4 vit_small_patch16_224 factor: bal_acc=0.951 sens=0.966 spec=0.936 (1.7 min; 6.20 h)
+[31/60] binary_P2_msld_v2_to_msld_v2_rep0 resnet50 erm: bal_acc=0.796 sens=0.741 spec=0.851 (1.53 min; 6.23 h)
+[32/60] binary_P2_msld_v2_to_msld_v2_rep0 resnet50 factor: bal_acc=0.745 sens=0.852 spec=0.638 (2.0 min; 6.26 h)
+[33/60] binary_P2_msld_v2_to_msld_v2_rep0 efficientnet_b0 erm: bal_acc=0.732 sens=0.741 spec=0.723 (0.66 min; 6.27 h)
+[34/60] binary_P2_msld_v2_to_msld_v2_rep0 efficientnet_b0 factor: bal_acc=0.807 sens=0.741 spec=0.872 (2.43 min; 6.31 h)
+[35/60] binary_P2_msld_v2_to_msld_v2_rep0 vit_small_patch16_224 erm: bal_acc=0.883 sens=0.852 spec=0.915 (1.06 min; 6.33 h)
+[36/60] binary_P2_msld_v2_to_msld_v2_rep0 vit_small_patch16_224 factor: bal_acc=0.809 sens=0.852 spec=0.766 (1.37 min; 6.35 h)
+[37/60] binary_P2_msld_v2_to_msld_v2_rep1 resnet50 erm: bal_acc=0.734 sens=0.742 spec=0.725 (1.47 min; 6.38 h)
+[38/60] binary_P2_msld_v2_to_msld_v2_rep1 resnet50 factor: bal_acc=0.775 sens=1.000 spec=0.549 (1.69 min; 6.41 h)
+[39/60] binary_P2_msld_v2_to_msld_v2_rep1 efficientnet_b0 erm: bal_acc=0.699 sens=0.613 spec=0.784 (0.73 min; 6.42 h)
+[40/60] binary_P2_msld_v2_to_msld_v2_rep1 efficientnet_b0 factor: bal_acc=0.764 sens=0.645 spec=0.882 (2.54 min; 6.46 h)
+[41/60] binary_P2_msld_v2_to_msld_v2_rep1 vit_small_patch16_224 erm: bal_acc=0.805 sens=0.806 spec=0.804 (0.73 min; 6.47 h)
+[42/60] binary_P2_msld_v2_to_msld_v2_rep1 vit_small_patch16_224 factor: bal_acc=0.795 sens=0.903 spec=0.686 (1.66 min; 6.50 h)
+[43/60] binary_P2_msld_v2_to_msld_v2_rep2 resnet50 erm: bal_acc=0.814 sens=0.818 spec=0.810 (0.91 min; 6.52 h)
+[44/60] binary_P2_msld_v2_to_msld_v2_rep2 resnet50 factor: bal_acc=0.812 sens=0.909 spec=0.714 (1.71 min; 6.55 h)
+[45/60] binary_P2_msld_v2_to_msld_v2_rep2 efficientnet_b0 erm: bal_acc=0.850 sens=0.818 spec=0.881 (0.64 min; 6.56 h)
+[46/60] binary_P2_msld_v2_to_msld_v2_rep2 efficientnet_b0 factor: bal_acc=0.815 sens=0.773 spec=0.857 (2.01 min; 6.59 h)
+[47/60] binary_P2_msld_v2_to_msld_v2_rep2 vit_small_patch16_224 erm: bal_acc=0.863 sens=0.773 spec=0.952 (0.47 min; 6.60 h)
+[48/60] binary_P2_msld_v2_to_msld_v2_rep2 vit_small_patch16_224 factor: bal_acc=0.839 sens=0.773 spec=0.905 (1.59 min; 6.63 h)
+[49/60] binary_P2_msld_v2_to_msld_v2_rep3 resnet50 erm: bal_acc=0.694 sens=0.667 spec=0.722 (1.05 min; 6.64 h)
+[50/60] binary_P2_msld_v2_to_msld_v2_rep3 resnet50 factor: bal_acc=0.630 sens=0.444 spec=0.815 (3.81 min; 6.71 h)
+[51/60] binary_P2_msld_v2_to_msld_v2_rep3 efficientnet_b0 erm: bal_acc=0.750 sens=0.704 spec=0.796 (0.99 min; 6.72 h)
+[52/60] binary_P2_msld_v2_to_msld_v2_rep3 efficientnet_b0 factor: bal_acc=0.713 sens=0.704 spec=0.722 (2.84 min; 6.77 h)
+[53/60] binary_P2_msld_v2_to_msld_v2_rep3 vit_small_patch16_224 erm: bal_acc=0.806 sens=0.852 spec=0.759 (0.55 min; 6.78 h)
+[54/60] binary_P2_msld_v2_to_msld_v2_rep3 vit_small_patch16_224 factor: bal_acc=0.796 sens=0.852 spec=0.741 (3.12 min; 6.83 h)
+[55/60] binary_P2_msld_v2_to_msld_v2_rep4 resnet50 erm: bal_acc=0.844 sens=0.889 spec=0.800 (1.43 min; 6.86 h)
+[56/60] binary_P2_msld_v2_to_msld_v2_rep4 resnet50 factor: bal_acc=0.744 sens=1.000 spec=0.489 (1.58 min; 6.88 h)
+[57/60] binary_P2_msld_v2_to_msld_v2_rep4 efficientnet_b0 erm: bal_acc=0.828 sens=0.833 spec=0.822 (0.52 min; 6.89 h)
+[58/60] binary_P2_msld_v2_to_msld_v2_rep4 efficientnet_b0 factor: bal_acc=0.856 sens=1.000 spec=0.711 (2.01 min; 6.93 h)
+[59/60] binary_P2_msld_v2_to_msld_v2_rep4 vit_small_patch16_224 erm: bal_acc=0.872 sens=0.944 spec=0.800 (0.43 min; 6.93 h)
+[60/60] binary_P2_msld_v2_to_msld_v2_rep4 vit_small_patch16_224 factor: bal_acc=0.872 sens=0.944 spec=0.800 (2.42 min; 6.97 h)
+Collected 192 runs into results_factor/all_runs.csv
+== [13:01:50 UTC, +418 min] 10-13, 17. summary, operating points, paired statistics, open-set analysis
+## P3: cross-dataset, mean ± SD over models and seeds
+| Method | MSID → MSLD v2.0: bal. acc. | MSID → MSLD v2.0: spec. | MSID → MSLD v2.0: sens. | MSLD v2.0 → MSID: bal. acc. | MSLD v2.0 → MSID: spec. | MSLD v2.0 → MSID: sens. | Mean bal. acc. (both) | n runs |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ERM (standard fine-tuning) | 0.702 ± 0.047 | 0.476 ± 0.110 | 0.928 ± 0.030 | 0.847 ± 0.028 | 0.971 ± 0.015 | 0.723 ± 0.044 | 0.774 ± 0.084 | 18 |
+| Random-negative control | 0.738 ± 0.029 | 0.601 ± 0.111 | 0.874 ± 0.067 | 0.849 ± 0.020 | 0.962 ± 0.015 | 0.736 ± 0.045 | 0.793 ± 0.062 | 18 |
+| Atlas negatives, flat head | 0.750 ± 0.030 | 0.624 ± 0.093 | 0.876 ± 0.047 | 0.843 ± 0.017 | 0.972 ± 0.015 | 0.713 ± 0.031 | 0.796 ± 0.053 | 18 |
+| Atlas, 5 conditions | 0.748 ± 0.004 | 0.592 ± 0.058 | 0.904 ± 0.055 |  |  |  | 0.748 ± 0.004 | 3 |
+| Atlas, 20 conditions | 0.729 ± 0.023 | 0.548 ± 0.104 | 0.910 ± 0.058 |  |  |  | 0.729 ± 0.023 | 3 |
+| HOD (Roy et al. 2022) | 0.770 ± 0.027 | 0.684 ± 0.084 | 0.857 ± 0.042 | 0.848 ± 0.024 | 0.965 ± 0.014 | 0.732 ± 0.052 | 0.809 ± 0.047 | 18 |
+| FACTOR head, static control pool | 0.740 ± 0.032 | 0.566 ± 0.102 | 0.913 ± 0.048 | 0.850 ± 0.023 | 0.952 ± 0.019 | 0.747 ± 0.053 | 0.795 ± 0.063 | 18 |
+| FACTOR without tone matching | 0.761 ± 0.034 | 0.616 ± 0.116 | 0.906 ± 0.053 | 0.843 ± 0.032 | 0.965 ± 0.015 | 0.721 ± 0.062 | 0.802 ± 0.053 | 18 |
+| FACTOR (proposed) | 0.750 ± 0.035 | 0.607 ± 0.135 | 0.893 ± 0.076 | 0.847 ± 0.024 | 0.958 ± 0.023 | 0.737 ± 0.048 | 0.799 ± 0.058 | 18 |
+
+## P3 balanced accuracy by backbone (mean over directions and seeds)
+| method | efficientnet_b0 | resnet50 | vit_small_patch16_224 |
+| --- | --- | --- | --- |
+| erm | 0.748 | 0.762 | 0.813 |
+| rand | 0.774 | 0.798 | 0.808 |
+| atlas | 0.78 | 0.795 | 0.813 |
+| div5 | nan | 0.748 | nan |
+| div20 | nan | 0.729 | nan |
+| hod | 0.817 | 0.779 | 0.831 |
+| factor_static | 0.8 | 0.781 | 0.803 |
+| factor_notone | 0.802 | 0.769 | 0.833 |
+| factor | 0.79 | 0.778 | 0.827 |
+
+## Skin tone (sensitivity: MSLD v2.0 → MSID; specificity: MSID → MSLD v2.0)
+| Method | Sens. dark | Sens. light | Sens. gap (dark-light) | Worst-band sens. | Spec. dark | Spec. light | Spec. gap (dark-light) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ERM (standard fine-tuning) | 0.852 | 0.547 | +0.306 | 0.547 | 0.401 | 0.515 | -0.114 |
+| Random-negative control | 0.849 | 0.577 | +0.272 | 0.577 | 0.546 | 0.629 | -0.083 |
+| Atlas negatives, flat head | 0.839 | 0.536 | +0.303 | 0.536 | 0.556 | 0.656 | -0.101 |
+| Atlas, 5 conditions | nan | nan | +nan | nan | 0.486 | 0.623 | -0.136 |
+| Atlas, 20 conditions | nan | nan | +nan | nan | 0.476 | 0.567 | -0.091 |
+| HOD (Roy et al. 2022) | 0.844 | 0.577 | +0.268 | 0.577 | 0.644 | 0.712 | -0.068 |
+| FACTOR head, static control pool | 0.867 | 0.589 | +0.278 | 0.589 | 0.524 | 0.587 | -0.063 |
+| FACTOR without tone matching | 0.840 | 0.563 | +0.277 | 0.562 | 0.559 | 0.647 | -0.088 |
+| FACTOR (proposed) | 0.859 | 0.572 | +0.287 | 0.572 | 0.533 | 0.635 | -0.102 |
+
+## % of MSLD v2.0 images called mpox by MSID-trained models
+| method | chickenpox | cowpox | healthy | hfmd | measles | mpox |
+| --- | --- | --- | --- | --- | --- | --- |
+| erm | 73.4 | 94.8 | 24.4 | 47.2 | 41.0 | 92.8 |
+| rand | 69.7 | 76.9 | 22.9 | 24.4 | 32.2 | 87.4 |
+| atlas | 76.0 | 75.8 | 21.5 | 16.9 | 31.2 | 87.6 |
+| div5 | 80.6 | 83.8 | 30.1 | 16.8 | 24.8 | 90.4 |
+| div20 | 82.4 | 84.3 | 35.9 | 22.2 | 32.0 | 91.0 |
+| hod | 64.6 | 69.7 | 15.6 | 14.8 | 20.5 | 85.7 |
+| factor_static | 76.3 | 78.1 | 22.8 | 29.9 | 35.3 | 91.3 |
+| factor_notone | 75.8 | 75.9 | 20.6 | 19.5 | 31.8 | 90.6 |
+| factor | 71.6 | 72.2 | 20.5 | 23.5 | 38.1 | 89.3 |
+
+## P2: patient-level, mean ± SD over models and folds
+| Method | msid P2 bal. acc. | msld_v2 P2 bal. acc. |
+| --- | --- | --- |
+| ERM (standard fine-tuning) | 0.926 ± 0.018 | 0.798 ± 0.062 |
+| FACTOR (proposed) | 0.915 ± 0.035 | 0.785 ± 0.061 |
+
+## Paired Wilcoxon signed-rank tests (P3 balanced accuracy)
+| Comparison | pairs | mean diff | wins | Wilcoxon p |
+| --- | --- | --- | --- | --- |
+| FACTOR (proposed) vs ERM (standard fine-tuning) | 18 | +0.024 | 13 | 0.0665 |
+| FACTOR (proposed) vs Random-negative control | 18 | +0.005 | 9 | 0.9323 |
+| FACTOR (proposed) vs Atlas negatives, flat head | 18 | +0.003 | 10 | 0.5798 |
+| FACTOR (proposed) vs HOD (Roy et al. 2022) | 18 | -0.011 | 10 | 0.3038 |
+| FACTOR (proposed) vs FACTOR without tone matching | 18 | -0.003 | 7 | 0.5798 |
+| FACTOR (proposed) vs FACTOR head, static control pool | 18 | +0.004 | 11 | 0.8650 |
+| Atlas negatives, flat head vs Random-negative control | 18 | +0.003 | 7 | 0.9323 |
+| HOD (Roy et al. 2022) vs Atlas negatives, flat head | 18 | +0.013 | 11 | 0.1084 |
+| Random-negative control vs ERM (standard fine-tuning) | 18 | +0.019 | 12 | 0.0665 |
+
+## Operating points (P3), mean ± SD over backbones and seeds
+
+### MSID → MSLD v2.0
+
+| method | AUROC | spec. @ 90% sens. (test ROC) | sens. @ 90% spec. (test ROC) | test sens. (val. thr. for 90% sens.) | test spec. (same thr.) | test bal. acc. (same thr.) | test bal. acc. (val. Youden thr.) | runs |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| atlas | 0.841 ± 0.031 | 0.597 ± 0.055 | 0.506 ± 0.072 | 0.870 ± 0.074 | 0.617 ± 0.123 | 0.744 ± 0.039 | 0.755 ± 0.029 | 9 |
+| div20 | 0.826 ± 0.012 | 0.574 ± 0.008 | 0.450 ± 0.080 | 0.878 ± 0.080 | 0.587 ± 0.143 | 0.732 ± 0.032 | 0.741 ± 0.014 | 3 |
+| div5 | 0.840 ± 0.007 | 0.619 ± 0.043 | 0.489 ± 0.049 | 0.899 ± 0.082 | 0.604 ± 0.148 | 0.751 ± 0.037 | 0.766 ± 0.010 | 3 |
+| erm | 0.813 ± 0.039 | 0.549 ± 0.082 | 0.402 ± 0.167 | 0.873 ± 0.050 | 0.583 ± 0.106 | 0.728 ± 0.041 | 0.692 ± 0.041 | 9 |
+| factor | 0.846 ± 0.027 | 0.612 ± 0.053 | 0.519 ± 0.084 | 0.842 ± 0.097 | 0.682 ± 0.107 | 0.762 ± 0.025 | 0.753 ± 0.033 | 9 |
+| factor_notone | 0.852 ± 0.021 | 0.640 ± 0.053 | 0.516 ± 0.075 | 0.853 ± 0.098 | 0.661 ± 0.131 | 0.757 ± 0.027 | 0.750 ± 0.030 | 9 |
+| factor_static | 0.838 ± 0.024 | 0.606 ± 0.060 | 0.495 ± 0.065 | 0.866 ± 0.060 | 0.644 ± 0.105 | 0.755 ± 0.031 | 0.749 ± 0.031 | 9 |
+| hod | 0.859 ± 0.024 | 0.638 ± 0.053 | 0.558 ± 0.071 | 0.851 ± 0.099 | 0.651 ± 0.200 | 0.751 ± 0.056 | 0.757 ± 0.041 | 9 |
+| rand | 0.831 ± 0.035 | 0.594 ± 0.078 | 0.490 ± 0.093 | 0.803 ± 0.089 | 0.677 ± 0.118 | 0.740 ± 0.032 | 0.738 ± 0.037 | 9 |
+
+### MSLD v2.0 → MSID
+
+| method | AUROC | spec. @ 90% sens. (test ROC) | sens. @ 90% spec. (test ROC) | test sens. (val. thr. for 90% sens.) | test spec. (same thr.) | test bal. acc. (same thr.) | test bal. acc. (val. Youden thr.) | runs |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| atlas | 0.933 ± 0.012 | 0.795 ± 0.070 | 0.850 ± 0.023 | 0.697 ± 0.064 | 0.968 ± 0.031 | 0.833 ± 0.022 | 0.833 ± 0.020 | 9 |
+| erm | 0.938 ± 0.016 | 0.817 ± 0.067 | 0.856 ± 0.034 | 0.771 ± 0.076 | 0.942 ± 0.050 | 0.857 ± 0.023 | 0.849 ± 0.028 | 9 |
+| factor | 0.920 ± 0.018 | 0.742 ± 0.086 | 0.831 ± 0.030 | 0.715 ± 0.071 | 0.960 ± 0.036 | 0.837 ± 0.029 | 0.837 ± 0.031 | 9 |
+| factor_notone | 0.924 ± 0.016 | 0.769 ± 0.073 | 0.837 ± 0.027 | 0.707 ± 0.091 | 0.962 ± 0.036 | 0.834 ± 0.035 | 0.843 ± 0.024 | 9 |
+| factor_static | 0.924 ± 0.015 | 0.751 ± 0.088 | 0.839 ± 0.032 | 0.740 ± 0.058 | 0.954 ± 0.029 | 0.847 ± 0.020 | 0.847 ± 0.029 | 9 |
+| hod | 0.944 ± 0.015 | 0.833 ± 0.050 | 0.850 ± 0.034 | 0.689 ± 0.074 | 0.974 ± 0.019 | 0.831 ± 0.032 | 0.837 ± 0.027 | 9 |
+| rand | 0.933 ± 0.012 | 0.798 ± 0.039 | 0.825 ± 0.023 | 0.698 ± 0.078 | 0.969 ± 0.025 | 0.833 ± 0.031 | 0.837 ± 0.028 | 9 |
+
+## Paired Wilcoxon tests within each direction (Holm-adjusted within direction and metric)
+
+| direction | metric | comparison | pairs | mean diff | wins | p | p (Holm) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MSID → MSLD v2.0 | auroc | factor vs erm | 9 | +0.033 | 8 | 0.0078 | 0.0703 |
+| MSID → MSLD v2.0 | auroc | factor vs rand | 9 | +0.016 | 4 | 0.7344 | 1.0000 |
+| MSID → MSLD v2.0 | auroc | factor vs atlas | 9 | +0.005 | 4 | 0.6523 | 1.0000 |
+| MSID → MSLD v2.0 | auroc | factor vs hod | 9 | -0.012 | 1 | 0.0391 | 0.3125 |
+| MSID → MSLD v2.0 | auroc | factor vs factor_notone | 9 | -0.006 | 4 | 0.3594 | 1.0000 |
+| MSID → MSLD v2.0 | auroc | factor vs factor_static | 9 | +0.008 | 6 | 0.6523 | 1.0000 |
+| MSID → MSLD v2.0 | auroc | atlas vs rand | 9 | +0.010 | 6 | 0.4258 | 1.0000 |
+| MSID → MSLD v2.0 | auroc | hod vs atlas | 9 | +0.018 | 6 | 0.1641 | 0.9844 |
+| MSID → MSLD v2.0 | auroc | rand vs erm | 9 | +0.018 | 6 | 0.1289 | 0.9023 |
+| MSID → MSLD v2.0 | test_bal_acc_val90 | factor vs erm | 9 | +0.034 | 7 | 0.0273 | 0.2461 |
+| MSID → MSLD v2.0 | test_bal_acc_val90 | factor vs rand | 9 | +0.022 | 7 | 0.2500 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_val90 | factor vs atlas | 9 | +0.018 | 6 | 0.1641 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_val90 | factor vs hod | 9 | +0.011 | 4 | 0.8203 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_val90 | factor vs factor_notone | 9 | +0.005 | 4 | 0.6523 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_val90 | factor vs factor_static | 9 | +0.007 | 3 | 0.9102 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_val90 | atlas vs rand | 9 | +0.003 | 4 | 0.9102 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_val90 | hod vs atlas | 9 | +0.007 | 6 | 0.6523 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_val90 | rand vs erm | 9 | +0.012 | 5 | 0.5703 | 1.0000 |
+| MSID → MSLD v2.0 | test_spec_val90 | factor vs erm | 9 | +0.099 | 8 | 0.0273 | 0.2461 |
+| MSID → MSLD v2.0 | test_spec_val90 | factor vs rand | 9 | +0.005 | 4 | 1.0000 | 1.0000 |
+| MSID → MSLD v2.0 | test_spec_val90 | factor vs atlas | 9 | +0.065 | 5 | 0.1719 | 1.0000 |
+| MSID → MSLD v2.0 | test_spec_val90 | factor vs hod | 9 | +0.031 | 5 | 0.4766 | 1.0000 |
+| MSID → MSLD v2.0 | test_spec_val90 | factor vs factor_notone | 9 | +0.021 | 5 | 0.4609 | 1.0000 |
+| MSID → MSLD v2.0 | test_spec_val90 | factor vs factor_static | 9 | +0.038 | 5 | 0.4453 | 1.0000 |
+| MSID → MSLD v2.0 | test_spec_val90 | atlas vs rand | 9 | -0.060 | 2 | 0.1289 | 0.9023 |
+| MSID → MSLD v2.0 | test_spec_val90 | hod vs atlas | 9 | +0.034 | 7 | 0.4258 | 1.0000 |
+| MSID → MSLD v2.0 | test_spec_val90 | rand vs erm | 9 | +0.094 | 6 | 0.0742 | 0.5938 |
+| MSID → MSLD v2.0 | test_bal_acc_youden | factor vs erm | 9 | +0.061 | 8 | 0.0078 | 0.0703 |
+| MSID → MSLD v2.0 | test_bal_acc_youden | factor vs rand | 9 | +0.016 | 6 | 0.4258 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_youden | factor vs atlas | 9 | -0.002 | 5 | 1.0000 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_youden | factor vs hod | 9 | -0.004 | 4 | 0.8203 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_youden | factor vs factor_notone | 9 | +0.004 | 4 | 0.9102 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_youden | factor vs factor_static | 9 | +0.004 | 4 | 0.9102 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_youden | atlas vs rand | 9 | +0.017 | 6 | 0.3594 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_youden | hod vs atlas | 9 | +0.002 | 6 | 0.4258 | 1.0000 |
+| MSID → MSLD v2.0 | test_bal_acc_youden | rand vs erm | 9 | +0.045 | 7 | 0.0273 | 0.2188 |
+| MSLD v2.0 → MSID | auroc | factor vs erm | 9 | -0.017 | 2 | 0.0195 | 0.1562 |
+| MSLD v2.0 → MSID | auroc | factor vs rand | 9 | -0.013 | 3 | 0.0977 | 0.6836 |
+| MSLD v2.0 → MSID | auroc | factor vs atlas | 9 | -0.013 | 2 | 0.1641 | 0.8203 |
+| MSLD v2.0 → MSID | auroc | factor vs hod | 9 | -0.024 | 0 | 0.0039 | 0.0352 |
+| MSLD v2.0 → MSID | auroc | factor vs factor_notone | 9 | -0.003 | 5 | 0.7344 | 1.0000 |
+| MSLD v2.0 → MSID | auroc | factor vs factor_static | 9 | -0.004 | 3 | 0.4961 | 1.0000 |
+| MSLD v2.0 → MSID | auroc | atlas vs rand | 9 | +0.000 | 5 | 0.9102 | 1.0000 |
+| MSLD v2.0 → MSID | auroc | hod vs atlas | 9 | +0.011 | 7 | 0.1289 | 0.7734 |
+| MSLD v2.0 → MSID | auroc | rand vs erm | 9 | -0.005 | 3 | 0.2500 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_val90 | factor vs erm | 9 | -0.020 | 2 | 0.0977 | 0.7812 |
+| MSLD v2.0 → MSID | test_bal_acc_val90 | factor vs rand | 9 | +0.004 | 6 | 0.6523 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_val90 | factor vs atlas | 9 | +0.005 | 6 | 0.5703 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_val90 | factor vs hod | 9 | +0.006 | 5 | 0.8203 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_val90 | factor vs factor_notone | 9 | +0.003 | 4 | 0.8203 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_val90 | factor vs factor_static | 9 | -0.010 | 3 | 0.4258 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_val90 | atlas vs rand | 9 | -0.001 | 5 | 0.9102 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_val90 | hod vs atlas | 9 | -0.001 | 5 | 0.9102 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_val90 | rand vs erm | 9 | -0.024 | 2 | 0.0547 | 0.4922 |
+| MSLD v2.0 → MSID | test_spec_val90 | factor vs erm | 9 | +0.017 | 4 | 0.4766 | 1.0000 |
+| MSLD v2.0 → MSID | test_spec_val90 | factor vs rand | 9 | -0.009 | 3 | 0.2500 | 1.0000 |
+| MSLD v2.0 → MSID | test_spec_val90 | factor vs atlas | 9 | -0.009 | 3 | 0.3281 | 1.0000 |
+| MSLD v2.0 → MSID | test_spec_val90 | factor vs hod | 9 | -0.014 | 3 | 0.1562 | 1.0000 |
+| MSLD v2.0 → MSID | test_spec_val90 | factor vs factor_notone | 9 | -0.002 | 5 | 0.9453 | 1.0000 |
+| MSLD v2.0 → MSID | test_spec_val90 | factor vs factor_static | 9 | +0.006 | 6 | 0.4961 | 1.0000 |
+| MSLD v2.0 → MSID | test_spec_val90 | atlas vs rand | 9 | -0.000 | 5 | 0.9453 | 1.0000 |
+| MSLD v2.0 → MSID | test_spec_val90 | hod vs atlas | 9 | +0.005 | 5 | 0.7148 | 1.0000 |
+| MSLD v2.0 → MSID | test_spec_val90 | rand vs erm | 9 | +0.026 | 5 | 0.1484 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_youden | factor vs erm | 9 | -0.012 | 2 | 0.2500 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_youden | factor vs rand | 9 | +0.000 | 5 | 0.9102 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_youden | factor vs atlas | 9 | +0.004 | 5 | 0.6523 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_youden | factor vs hod | 9 | -0.000 | 5 | 1.0000 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_youden | factor vs factor_notone | 9 | -0.006 | 4 | 0.7344 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_youden | factor vs factor_static | 9 | -0.010 | 3 | 0.4258 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_youden | atlas vs rand | 9 | -0.004 | 3 | 0.5703 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_youden | hod vs atlas | 9 | +0.005 | 5 | 0.8203 | 1.0000 |
+| MSLD v2.0 → MSID | test_bal_acc_youden | rand vs erm | 9 | -0.012 | 2 | 0.1641 | 1.0000 |
+## Paired comparisons per direction (95% bootstrap CI of the mean difference; Holm-adjusted within direction and metric)
+
+| direction | metric | comparison | pairs | mean diff [95% CI] | wins/losses | p | p (Holm) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MSID → MSLD v2.0 | balanced_accuracy | factor vs erm | 9 | +0.048 [+0.024, +0.072] | 8/1 | 0.0117 | 0.1055 |
+| MSID → MSLD v2.0 | balanced_accuracy | factor vs rand | 9 | +0.012 [-0.015, +0.040] | 5/4 | 0.5703 | 1.0000 |
+| MSID → MSLD v2.0 | balanced_accuracy | factor vs atlas | 9 | +0.000 [-0.017, +0.016] | 4/5 | 1.0000 | 1.0000 |
+| MSID → MSLD v2.0 | balanced_accuracy | factor vs hod | 9 | -0.021 [-0.044, +0.001] | 4/5 | 0.2031 | 1.0000 |
+| MSID → MSLD v2.0 | balanced_accuracy | factor vs factor_notone | 9 | -0.011 [-0.022, +0.000] | 2/7 | 0.1641 | 1.0000 |
+| MSID → MSLD v2.0 | balanced_accuracy | factor vs factor_static | 9 | +0.010 [-0.015, +0.038] | 6/3 | 0.8203 | 1.0000 |
+| MSID → MSLD v2.0 | balanced_accuracy | atlas vs rand | 9 | +0.012 [-0.009, +0.032] | 6/3 | 0.3008 | 1.0000 |
+| MSID → MSLD v2.0 | balanced_accuracy | hod vs atlas | 9 | +0.021 [+0.002, +0.046] | 5/4 | 0.1641 | 1.0000 |
+| MSID → MSLD v2.0 | balanced_accuracy | rand vs erm | 9 | +0.036 [+0.005, +0.063] | 8/1 | 0.0547 | 0.4375 |
+| MSID → MSLD v2.0 | auroc | factor vs erm | 9 | +0.033 [+0.019, +0.047] | 8/1 | 0.0078 | 0.0703 |
+| MSID → MSLD v2.0 | auroc | factor vs rand | 9 | +0.016 [-0.004, +0.040] | 4/5 | 0.7344 | 1.0000 |
+| MSID → MSLD v2.0 | auroc | factor vs atlas | 9 | +0.005 [-0.006, +0.018] | 4/5 | 0.6523 | 1.0000 |
+| MSID → MSLD v2.0 | auroc | factor vs hod | 9 | -0.012 [-0.025, -0.003] | 1/8 | 0.0391 | 0.3125 |
+| MSID → MSLD v2.0 | auroc | factor vs factor_notone | 9 | -0.006 [-0.015, +0.003] | 4/5 | 0.3594 | 1.0000 |
+| MSID → MSLD v2.0 | auroc | factor vs factor_static | 9 | +0.008 [-0.010, +0.029] | 6/3 | 0.6523 | 1.0000 |
+| MSID → MSLD v2.0 | auroc | atlas vs rand | 9 | +0.010 [-0.013, +0.036] | 6/3 | 0.4258 | 1.0000 |
+| MSID → MSLD v2.0 | auroc | hod vs atlas | 9 | +0.018 [+0.001, +0.039] | 6/3 | 0.1641 | 0.9844 |
+| MSID → MSLD v2.0 | auroc | rand vs erm | 9 | +0.018 [-0.002, +0.036] | 6/3 | 0.1289 | 0.9023 |
+| MSID → MSLD v2.0 | mpox_specificity | factor vs erm | 9 | +0.131 [+0.055, +0.210] | 8/1 | 0.0195 | 0.1758 |
+| MSID → MSLD v2.0 | mpox_specificity | factor vs rand | 9 | +0.006 [-0.084, +0.094] | 4/5 | 0.9102 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_specificity | factor vs atlas | 9 | -0.017 [-0.101, +0.065] | 5/4 | 0.7344 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_specificity | factor vs hod | 9 | -0.077 [-0.171, +0.010] | 4/5 | 0.2031 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_specificity | factor vs factor_notone | 9 | -0.009 [-0.058, +0.040] | 5/4 | 0.9102 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_specificity | factor vs factor_static | 9 | +0.040 [-0.044, +0.141] | 7/2 | 0.4258 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_specificity | atlas vs rand | 9 | +0.022 [-0.038, +0.086] | 5/4 | 0.7344 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_specificity | hod vs atlas | 9 | +0.060 [+0.011, +0.135] | 7/2 | 0.0391 | 0.3125 |
+| MSID → MSLD v2.0 | mpox_specificity | rand vs erm | 9 | +0.125 [+0.034, +0.211] | 7/2 | 0.0391 | 0.3125 |
+| MSID → MSLD v2.0 | mpox_sensitivity | factor vs erm | 9 | -0.035 [-0.079, +0.004] | 2/7 | 0.1641 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_sensitivity | factor vs rand | 9 | +0.019 [-0.021, +0.062] | 4/5 | 0.6523 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_sensitivity | factor vs atlas | 9 | +0.017 [-0.035, +0.069] | 5/4 | 0.5703 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_sensitivity | factor vs hod | 9 | +0.036 [-0.016, +0.088] | 6/3 | 0.2500 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_sensitivity | factor vs factor_notone | 9 | -0.013 [-0.044, +0.019] | 3/6 | 0.4961 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_sensitivity | factor vs factor_static | 9 | -0.020 [-0.071, +0.024] | 5/4 | 0.8203 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_sensitivity | atlas vs rand | 9 | +0.001 [-0.031, +0.038] | 3/6 | 0.9102 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_sensitivity | hod vs atlas | 9 | -0.019 [-0.047, +0.004] | 3/6 | 0.2500 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_sensitivity | rand vs erm | 9 | -0.054 [-0.101, -0.005] | 4/5 | 0.1641 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | factor vs erm | 9 | +0.000 [-0.018, +0.019] | 5/4 | 0.7344 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | factor vs rand | 9 | -0.002 [-0.017, +0.016] | 4/5 | 0.6523 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | factor vs atlas | 9 | +0.005 [-0.007, +0.017] | 6/3 | 0.4258 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | factor vs hod | 9 | -0.001 [-0.012, +0.009] | 6/3 | 1.0000 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | factor vs factor_notone | 9 | +0.005 [-0.010, +0.020] | 5/4 | 0.6523 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | factor vs factor_static | 9 | -0.002 [-0.015, +0.011] | 5/4 | 0.7344 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | atlas vs rand | 9 | -0.006 [-0.020, +0.010] | 1/8 | 0.1289 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | hod vs atlas | 9 | +0.006 [-0.011, +0.022] | 6/3 | 0.4961 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | rand vs erm | 9 | +0.002 [-0.008, +0.015] | 4/5 | 0.8203 | 1.0000 |
+| MSLD v2.0 → MSID | auroc | factor vs erm | 9 | -0.017 [-0.028, -0.008] | 2/7 | 0.0195 | 0.1562 |
+| MSLD v2.0 → MSID | auroc | factor vs rand | 9 | -0.013 [-0.026, +0.001] | 3/6 | 0.0977 | 0.6836 |
+| MSLD v2.0 → MSID | auroc | factor vs atlas | 9 | -0.013 [-0.025, -0.002] | 2/7 | 0.1641 | 0.8203 |
+| MSLD v2.0 → MSID | auroc | factor vs hod | 9 | -0.024 [-0.029, -0.019] | 0/9 | 0.0039 | 0.0352 |
+| MSLD v2.0 → MSID | auroc | factor vs factor_notone | 9 | -0.003 [-0.009, +0.003] | 5/4 | 0.7344 | 1.0000 |
+| MSLD v2.0 → MSID | auroc | factor vs factor_static | 9 | -0.004 [-0.015, +0.009] | 3/6 | 0.4961 | 1.0000 |
+| MSLD v2.0 → MSID | auroc | atlas vs rand | 9 | +0.000 [-0.007, +0.008] | 5/4 | 0.9102 | 1.0000 |
+| MSLD v2.0 → MSID | auroc | hod vs atlas | 9 | +0.011 [-0.001, +0.022] | 7/2 | 0.1289 | 0.7734 |
+| MSLD v2.0 → MSID | auroc | rand vs erm | 9 | -0.005 [-0.011, +0.002] | 3/6 | 0.2500 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | factor vs erm | 9 | -0.013 [-0.023, -0.004] | 2/6 | 0.0391 | 0.3516 |
+| MSLD v2.0 → MSID | mpox_specificity | factor vs rand | 9 | -0.004 [-0.019, +0.011] | 4/5 | 0.7344 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | factor vs atlas | 9 | -0.014 [-0.024, -0.004] | 1/8 | 0.0391 | 0.3516 |
+| MSLD v2.0 → MSID | mpox_specificity | factor vs hod | 9 | -0.006 [-0.022, +0.012] | 3/6 | 0.3008 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | factor vs factor_notone | 9 | -0.006 [-0.016, +0.003] | 3/6 | 0.3594 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | factor vs factor_static | 9 | +0.006 [-0.005, +0.016] | 5/3 | 0.3828 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | atlas vs rand | 9 | +0.010 [-0.001, +0.023] | 6/3 | 0.2500 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | hod vs atlas | 9 | -0.008 [-0.020, +0.001] | 4/5 | 0.3008 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | rand vs erm | 9 | -0.009 [-0.022, +0.002] | 2/5 | 0.2969 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_sensitivity | factor vs erm | 9 | +0.014 [-0.026, +0.056] | 5/4 | 0.8203 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_sensitivity | factor vs rand | 9 | +0.000 [-0.038, +0.045] | 3/6 | 0.9102 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_sensitivity | factor vs atlas | 9 | +0.024 [-0.006, +0.053] | 6/3 | 0.2500 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_sensitivity | factor vs hod | 9 | +0.005 [-0.029, +0.033] | 5/3 | 0.6406 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_sensitivity | factor vs factor_notone | 9 | +0.016 [-0.014, +0.045] | 5/3 | 0.3125 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_sensitivity | factor vs factor_static | 9 | -0.010 [-0.040, +0.021] | 3/6 | 0.4961 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_sensitivity | atlas vs rand | 9 | -0.023 [-0.055, +0.016] | 1/8 | 0.1289 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_sensitivity | hod vs atlas | 9 | +0.019 [-0.021, +0.061] | 6/3 | 0.5703 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_sensitivity | rand vs erm | 9 | +0.013 [-0.010, +0.041] | 4/5 | 0.8203 | 1.0000 |
+# Seen vs unseen negative classes (P3, mean ± SD over backbones and seeds)
+
+## MSID → MSLD v2.0 (classes not seen in training: cowpox, hfmd)
+
+| method | runs | sens. | closed-set bal. acc. | unseen-class spec. | disease spec. | healthy spec. | AUROC vs disease | AUROC vs healthy | disease-factor AUROC | mpox-factor AUROC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| erm | 9 | 0.928 ± 0.030 | 0.744 ± 0.049 | 0.390 ± 0.116 | 0.393 ± 0.105 | 0.756 ± 0.141 | 0.774 ± 0.043 | 0.946 ± 0.034 | – | – |
+| rand | 9 | 0.874 ± 0.067 | 0.737 ± 0.043 | 0.603 ± 0.096 | 0.551 ± 0.119 | 0.771 ± 0.123 | 0.807 ± 0.033 | 0.912 ± 0.046 | – | – |
+| atlas | 9 | 0.876 ± 0.047 | 0.732 ± 0.039 | 0.660 ± 0.074 | 0.576 ± 0.091 | 0.785 ± 0.113 | 0.815 ± 0.035 | 0.929 ± 0.028 | – | – |
+| div5 | 3 | 0.904 ± 0.055 | 0.726 ± 0.018 | 0.637 ± 0.056 | 0.561 ± 0.057 | 0.699 ± 0.073 | 0.815 ± 0.006 | 0.925 ± 0.018 | – | – |
+| div20 | 3 | 0.910 ± 0.058 | 0.704 ± 0.034 | 0.598 ± 0.090 | 0.521 ± 0.099 | 0.641 ± 0.120 | 0.804 ± 0.016 | 0.902 ± 0.006 | – | – |
+| hod | 9 | 0.857 ± 0.042 | 0.766 ± 0.036 | 0.693 ± 0.065 | 0.636 ± 0.079 | 0.844 ± 0.109 | 0.834 ± 0.024 | 0.944 ± 0.025 | – | – |
+| factor_static | 9 | 0.913 ± 0.048 | 0.742 ± 0.040 | 0.561 ± 0.127 | 0.505 ± 0.111 | 0.772 ± 0.120 | 0.809 ± 0.026 | 0.939 ± 0.027 | 0.914 ± 0.043 | 0.832 ± 0.023 |
+| factor_notone | 9 | 0.906 ± 0.053 | 0.748 ± 0.051 | 0.641 ± 0.098 | 0.563 ± 0.104 | 0.794 ± 0.167 | 0.823 ± 0.020 | 0.952 ± 0.026 | 0.930 ± 0.041 | 0.838 ± 0.020 |
+| factor | 9 | 0.893 ± 0.076 | 0.742 ± 0.045 | 0.623 ± 0.124 | 0.551 ± 0.138 | 0.795 ± 0.135 | 0.819 ± 0.030 | 0.940 ± 0.024 | 0.924 ± 0.041 | 0.831 ± 0.029 |
+
+## MSLD v2.0 → MSID (classes not seen in training: none)
+
+| method | runs | sens. | closed-set bal. acc. | unseen-class spec. | disease spec. | healthy spec. | AUROC vs disease | AUROC vs healthy | disease-factor AUROC | mpox-factor AUROC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| erm | 9 | 0.723 ± 0.044 | 0.847 ± 0.028 | – | 0.937 ± 0.032 | 0.994 ± 0.005 | 0.909 ± 0.032 | 0.957 ± 0.007 | – | – |
+| rand | 9 | 0.736 ± 0.045 | 0.849 ± 0.020 | – | 0.913 ± 0.035 | 0.995 ± 0.006 | 0.903 ± 0.023 | 0.953 ± 0.013 | – | – |
+| atlas | 9 | 0.713 ± 0.031 | 0.843 ± 0.017 | – | 0.935 ± 0.034 | 0.997 ± 0.004 | 0.907 ± 0.026 | 0.951 ± 0.011 | – | – |
+| hod | 9 | 0.732 ± 0.052 | 0.848 ± 0.024 | – | 0.920 ± 0.033 | 0.994 ± 0.004 | 0.908 ± 0.020 | 0.969 ± 0.012 | – | – |
+| factor_static | 9 | 0.747 ± 0.053 | 0.850 ± 0.023 | – | 0.888 ± 0.040 | 0.996 ± 0.007 | 0.893 ± 0.024 | 0.946 ± 0.015 | 0.919 ± 0.047 | 0.891 ± 0.024 |
+| factor_notone | 9 | 0.721 ± 0.062 | 0.843 ± 0.032 | – | 0.915 ± 0.035 | 0.998 ± 0.003 | 0.894 ± 0.023 | 0.944 ± 0.014 | 0.908 ± 0.058 | 0.893 ± 0.022 |
+| factor | 9 | 0.737 ± 0.048 | 0.847 ± 0.024 | – | 0.909 ± 0.049 | 0.992 ± 0.010 | 0.893 ± 0.030 | 0.939 ± 0.016 | 0.888 ± 0.107 | 0.901 ± 0.022 |
+
+## Paired comparisons per direction (95% bootstrap CI of the mean difference; Holm-adjusted within direction and metric)
+
+| direction | metric | comparison | pairs | mean diff [95% CI] | wins/losses | p | p (Holm) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MSID → MSLD v2.0 | closed_bal_acc | factor vs erm | 9 | -0.003 [-0.029, +0.025] | 5/4 | 1.0000 | 1.0000 |
+| MSID → MSLD v2.0 | closed_bal_acc | factor vs rand | 9 | +0.005 [-0.032, +0.045] | 4/5 | 1.0000 | 1.0000 |
+| MSID → MSLD v2.0 | closed_bal_acc | factor vs atlas | 9 | +0.010 [-0.017, +0.037] | 5/4 | 0.4961 | 1.0000 |
+| MSID → MSLD v2.0 | closed_bal_acc | factor vs hod | 9 | -0.024 [-0.052, +0.002] | 3/6 | 0.1641 | 1.0000 |
+| MSID → MSLD v2.0 | closed_bal_acc | factor vs factor_notone | 9 | -0.006 [-0.026, +0.014] | 3/6 | 0.4961 | 1.0000 |
+| MSID → MSLD v2.0 | closed_bal_acc | factor vs factor_static | 9 | -0.001 [-0.026, +0.023] | 5/4 | 0.7344 | 1.0000 |
+| MSID → MSLD v2.0 | closed_bal_acc | atlas vs rand | 9 | -0.005 [-0.031, +0.020] | 5/4 | 0.8203 | 1.0000 |
+| MSID → MSLD v2.0 | closed_bal_acc | hod vs atlas | 9 | +0.034 [+0.013, +0.064] | 9/0 | 0.0039 | 0.0352 |
+| MSID → MSLD v2.0 | closed_bal_acc | rand vs erm | 9 | -0.008 [-0.029, +0.015] | 4/5 | 0.5703 | 1.0000 |
+| MSID → MSLD v2.0 | unseen_spec | factor vs erm | 9 | +0.233 [+0.139, +0.321] | 8/1 | 0.0078 | 0.0703 |
+| MSID → MSLD v2.0 | unseen_spec | factor vs rand | 9 | +0.020 [-0.053, +0.091] | 5/4 | 0.5703 | 1.0000 |
+| MSID → MSLD v2.0 | unseen_spec | factor vs atlas | 9 | -0.037 [-0.109, +0.034] | 4/5 | 0.4961 | 1.0000 |
+| MSID → MSLD v2.0 | unseen_spec | factor vs hod | 9 | -0.070 [-0.155, +0.009] | 4/5 | 0.2500 | 1.0000 |
+| MSID → MSLD v2.0 | unseen_spec | factor vs factor_notone | 9 | -0.018 [-0.057, +0.023] | 4/5 | 0.4961 | 1.0000 |
+| MSID → MSLD v2.0 | unseen_spec | factor vs factor_static | 9 | +0.062 [-0.023, +0.174] | 5/3 | 0.3828 | 1.0000 |
+| MSID → MSLD v2.0 | unseen_spec | atlas vs rand | 9 | +0.057 [+0.005, +0.117] | 6/3 | 0.1289 | 0.9023 |
+| MSID → MSLD v2.0 | unseen_spec | hod vs atlas | 9 | +0.033 [-0.012, +0.098] | 3/5 | 0.8438 | 1.0000 |
+| MSID → MSLD v2.0 | unseen_spec | rand vs erm | 9 | +0.213 [+0.101, +0.309] | 8/1 | 0.0195 | 0.1562 |
+| MSID → MSLD v2.0 | disease_spec | factor vs erm | 9 | +0.158 [+0.071, +0.249] | 8/1 | 0.0195 | 0.1562 |
+| MSID → MSLD v2.0 | disease_spec | factor vs rand | 9 | +0.000 [-0.092, +0.090] | 5/4 | 1.0000 | 1.0000 |
+| MSID → MSLD v2.0 | disease_spec | factor vs atlas | 9 | -0.025 [-0.110, +0.062] | 5/4 | 0.6523 | 1.0000 |
+| MSID → MSLD v2.0 | disease_spec | factor vs hod | 9 | -0.085 [-0.181, +0.008] | 4/5 | 0.2031 | 1.0000 |
+| MSID → MSLD v2.0 | disease_spec | factor vs factor_notone | 9 | -0.012 [-0.070, +0.047] | 5/4 | 0.8203 | 1.0000 |
+| MSID → MSLD v2.0 | disease_spec | factor vs factor_static | 9 | +0.046 [-0.047, +0.158] | 7/2 | 0.4258 | 1.0000 |
+| MSID → MSLD v2.0 | disease_spec | atlas vs rand | 9 | +0.025 [-0.045, +0.102] | 5/4 | 0.8203 | 1.0000 |
+| MSID → MSLD v2.0 | disease_spec | hod vs atlas | 9 | +0.061 [+0.012, +0.140] | 8/1 | 0.0078 | 0.0703 |
+| MSID → MSLD v2.0 | disease_spec | rand vs erm | 9 | +0.158 [+0.050, +0.255] | 8/1 | 0.0273 | 0.1914 |
+| MSID → MSLD v2.0 | healthy_spec | factor vs erm | 9 | +0.038 [-0.010, +0.091] | 5/3 | 0.3125 | 1.0000 |
+| MSID → MSLD v2.0 | healthy_spec | factor vs rand | 9 | +0.024 [-0.065, +0.116] | 4/4 | 0.7422 | 1.0000 |
+| MSID → MSLD v2.0 | healthy_spec | factor vs atlas | 9 | +0.010 [-0.087, +0.091] | 4/4 | 0.8438 | 1.0000 |
+| MSID → MSLD v2.0 | healthy_spec | factor vs hod | 9 | -0.049 [-0.137, +0.028] | 5/4 | 0.5703 | 1.0000 |
+| MSID → MSLD v2.0 | healthy_spec | factor vs factor_notone | 9 | +0.001 [-0.036, +0.037] | 4/4 | 0.9453 | 1.0000 |
+| MSID → MSLD v2.0 | healthy_spec | factor vs factor_static | 9 | +0.022 [-0.032, +0.083] | 5/4 | 0.6523 | 1.0000 |
+| MSID → MSLD v2.0 | healthy_spec | atlas vs rand | 9 | +0.014 [-0.032, +0.056] | 5/3 | 0.6406 | 1.0000 |
+| MSID → MSLD v2.0 | healthy_spec | hod vs atlas | 9 | +0.059 [+0.001, +0.120] | 6/3 | 0.1289 | 1.0000 |
+| MSID → MSLD v2.0 | healthy_spec | rand vs erm | 9 | +0.015 [-0.040, +0.079] | 5/4 | 0.9102 | 1.0000 |
+| MSID → MSLD v2.0 | auroc_vs_disease | factor vs erm | 9 | +0.045 [+0.026, +0.061] | 8/1 | 0.0078 | 0.0703 |
+| MSID → MSLD v2.0 | auroc_vs_disease | factor vs rand | 9 | +0.012 [-0.008, +0.037] | 3/6 | 0.9102 | 1.0000 |
+| MSID → MSLD v2.0 | auroc_vs_disease | factor vs atlas | 9 | +0.004 [-0.011, +0.020] | 5/4 | 0.8203 | 1.0000 |
+| MSID → MSLD v2.0 | auroc_vs_disease | factor vs hod | 9 | -0.015 [-0.029, -0.004] | 2/7 | 0.0391 | 0.3125 |
+| MSID → MSLD v2.0 | auroc_vs_disease | factor vs factor_notone | 9 | -0.004 [-0.016, +0.008] | 6/3 | 1.0000 | 1.0000 |
+| MSID → MSLD v2.0 | auroc_vs_disease | factor vs factor_static | 9 | +0.010 [-0.011, +0.037] | 6/3 | 0.6523 | 1.0000 |
+| MSID → MSLD v2.0 | auroc_vs_disease | atlas vs rand | 9 | +0.008 [-0.017, +0.037] | 6/3 | 0.7344 | 1.0000 |
+| MSID → MSLD v2.0 | auroc_vs_disease | hod vs atlas | 9 | +0.019 [-0.001, +0.044] | 6/3 | 0.2500 | 1.0000 |
+| MSID → MSLD v2.0 | auroc_vs_disease | rand vs erm | 9 | +0.033 [+0.010, +0.056] | 7/2 | 0.0391 | 0.3125 |
+| MSLD v2.0 → MSID | closed_bal_acc | factor vs erm | 9 | +0.000 [-0.018, +0.019] | 5/4 | 0.7344 | 1.0000 |
+| MSLD v2.0 → MSID | closed_bal_acc | factor vs rand | 9 | -0.002 [-0.017, +0.016] | 4/5 | 0.6523 | 1.0000 |
+| MSLD v2.0 → MSID | closed_bal_acc | factor vs atlas | 9 | +0.005 [-0.007, +0.017] | 6/3 | 0.4258 | 1.0000 |
+| MSLD v2.0 → MSID | closed_bal_acc | factor vs hod | 9 | -0.001 [-0.012, +0.009] | 6/3 | 1.0000 | 1.0000 |
+| MSLD v2.0 → MSID | closed_bal_acc | factor vs factor_notone | 9 | +0.005 [-0.010, +0.020] | 5/4 | 0.6523 | 1.0000 |
+| MSLD v2.0 → MSID | closed_bal_acc | factor vs factor_static | 9 | -0.002 [-0.015, +0.011] | 5/4 | 0.7344 | 1.0000 |
+| MSLD v2.0 → MSID | closed_bal_acc | atlas vs rand | 9 | -0.006 [-0.020, +0.010] | 1/8 | 0.1289 | 1.0000 |
+| MSLD v2.0 → MSID | closed_bal_acc | hod vs atlas | 9 | +0.006 [-0.011, +0.022] | 6/3 | 0.4961 | 1.0000 |
+| MSLD v2.0 → MSID | closed_bal_acc | rand vs erm | 9 | +0.002 [-0.008, +0.015] | 4/5 | 0.8203 | 1.0000 |
+| MSLD v2.0 → MSID | disease_spec | factor vs erm | 9 | -0.029 [-0.052, -0.009] | 1/8 | 0.0078 | 0.0703 |
+| MSLD v2.0 → MSID | disease_spec | factor vs rand | 9 | -0.005 [-0.036, +0.025] | 4/5 | 0.9102 | 1.0000 |
+| MSLD v2.0 → MSID | disease_spec | factor vs atlas | 9 | -0.027 [-0.047, -0.006] | 1/8 | 0.0547 | 0.4375 |
+| MSLD v2.0 → MSID | disease_spec | factor vs hod | 9 | -0.012 [-0.044, +0.026] | 3/6 | 0.3008 | 1.0000 |
+| MSLD v2.0 → MSID | disease_spec | factor vs factor_notone | 9 | -0.006 [-0.026, +0.013] | 3/6 | 0.7344 | 1.0000 |
+| MSLD v2.0 → MSID | disease_spec | factor vs factor_static | 9 | +0.021 [-0.006, +0.045] | 6/2 | 0.1953 | 1.0000 |
+| MSLD v2.0 → MSID | disease_spec | atlas vs rand | 9 | +0.022 [-0.002, +0.049] | 5/3 | 0.2500 | 1.0000 |
+| MSLD v2.0 → MSID | disease_spec | hod vs atlas | 9 | -0.015 [-0.044, +0.006] | 3/6 | 0.4258 | 1.0000 |
+| MSLD v2.0 → MSID | disease_spec | rand vs erm | 9 | -0.024 [-0.048, -0.001] | 2/6 | 0.1484 | 1.0000 |
+| MSLD v2.0 → MSID | healthy_spec | factor vs erm | 9 | -0.003 [-0.009, +0.003] | 3/4 | 0.4688 | 1.0000 |
+| MSLD v2.0 → MSID | healthy_spec | factor vs rand | 9 | -0.003 [-0.010, +0.003] | 3/3 | 0.6875 | 1.0000 |
+| MSLD v2.0 → MSID | healthy_spec | factor vs atlas | 9 | -0.006 [-0.013, +0.001] | 1/4 | 0.3125 | 1.0000 |
+| MSLD v2.0 → MSID | healthy_spec | factor vs hod | 9 | -0.003 [-0.009, +0.003] | 2/3 | 0.6250 | 1.0000 |
+| MSLD v2.0 → MSID | healthy_spec | factor vs factor_notone | 9 | -0.006 [-0.012, -0.002] | 1/6 | 0.0469 | 0.4219 |
+| MSLD v2.0 → MSID | healthy_spec | factor vs factor_static | 9 | -0.004 [-0.008, -0.001] | 0/5 | 0.0625 | 0.5000 |
+| MSLD v2.0 → MSID | healthy_spec | atlas vs rand | 9 | +0.002 [-0.002, +0.007] | 5/2 | 0.4688 | 1.0000 |
+| MSLD v2.0 → MSID | healthy_spec | hod vs atlas | 9 | -0.003 [-0.006, +0.001] | 1/5 | 0.2188 | 1.0000 |
+| MSLD v2.0 → MSID | healthy_spec | rand vs erm | 9 | +0.000 [-0.005, +0.005] | 5/3 | 0.6406 | 1.0000 |
+| MSLD v2.0 → MSID | auroc_vs_disease | factor vs erm | 9 | -0.016 [-0.034, -0.001] | 2/7 | 0.1289 | 0.7812 |
+| MSLD v2.0 → MSID | auroc_vs_disease | factor vs rand | 9 | -0.010 [-0.027, +0.003] | 3/6 | 0.3008 | 1.0000 |
+| MSLD v2.0 → MSID | auroc_vs_disease | factor vs atlas | 9 | -0.014 [-0.028, -0.003] | 3/6 | 0.0977 | 0.7812 |
+| MSLD v2.0 → MSID | auroc_vs_disease | factor vs hod | 9 | -0.015 [-0.027, -0.005] | 2/7 | 0.0391 | 0.3516 |
+| MSLD v2.0 → MSID | auroc_vs_disease | factor vs factor_notone | 9 | -0.001 [-0.013, +0.010] | 5/4 | 1.0000 | 1.0000 |
+| MSLD v2.0 → MSID | auroc_vs_disease | factor vs factor_static | 9 | +0.000 [-0.017, +0.017] | 5/4 | 1.0000 | 1.0000 |
+| MSLD v2.0 → MSID | auroc_vs_disease | atlas vs rand | 9 | +0.004 [-0.005, +0.013] | 6/3 | 0.3594 | 1.0000 |
+| MSLD v2.0 → MSID | auroc_vs_disease | hod vs atlas | 9 | +0.001 [-0.013, +0.015] | 3/6 | 1.0000 | 1.0000 |
+| MSLD v2.0 → MSID | auroc_vs_disease | rand vs erm | 9 | -0.006 [-0.016, +0.006] | 1/8 | 0.0977 | 0.7812 |
+== [13:02:01 UTC, +418 min] package
+== [13:02:02 UTC, +418 min] DONE. Key files in /kaggle/working/key_results_factor

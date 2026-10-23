@@ -1,0 +1,688 @@
+== [11:45:32 UTC, +0 min] environment
+torch 2.11.0+cu128 | timm 1.0.29 | cv2 4.14.0 | cuda True
+code version: 7e1c6e9 MCSI amendment 1: load acne images listed without extension; score all MCSI images with pre-registered and direction-specific clean sets
+== [11:45:54 UTC, +0 min] 0. locate datasets
+MSLD=/kaggle/input/datasets/joydippaul/mpox-skin-lesion-dataset-version-20-msld-v20
+MSID=/kaggle/input/datasets/dipuiucse/monkeypoxskinimagedataset
+FITZ=/kaggle/input/datasets/mobaswiralfarabi/fitzpatrick17k-original
+== [11:45:58 UTC, +0 min] 1-4. index, embeddings, duplicate audit + ITA, splits (same as before)
+Indexing msld_v2 from /kaggle/input/datasets/joydippaul/mpox-skin-lesion-dataset-version-20-msld-v20
+  3775 files -> 754 unique images
+  [check] expected 755 unique images for msld_v2, found 754. Inspect index_report.txt before continuing.
+Indexing msid from /kaggle/input/datasets/dipuiucse/monkeypoxskinimagedataset
+  770 files -> 765 unique images
+msid: 765 unique images
+    healthy     292
+    mpox        277
+    chickenpox  106
+    measles     90
+msld_v2: 754 unique images
+    mpox        284
+    hfmd        161
+    healthy     114
+    chickenpox  74
+    cowpox      66
+    measles     55
+    fold 1: train=536 val=144 test=74
+    fold 2: train=508 val=164 test=82
+    fold 3: train=538 val=153 test=64
+    fold 4: train=524 val=150 test=81
+    fold 5: train=538 val=154 test=63
+
+Example file names:
+  msld_v2: CHP_08_01.jpg  ->  patient_hint=CHP_08
+  msld_v2: CHP_08_02.jpg  ->  patient_hint=CHP_08
+  msld_v2: CHP_14_01.jpg  ->  patient_hint=CHP_14
+  msid: chickenpox1.png  ->  patient_hint=chickenpox
+  msid: chickenpox10.png  ->  patient_hint=chickenpox
+  msid: chickenpox100.png  ->  patient_hint=chickenpox
+
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+73 candidate pairs; 23 auto-accepted (cos >= 0.97); 50 need review (50 drawn on embedding_review_sheet.png)
+Hashing 1519 images ...
+  hashed 250/1519
+  hashed 500/1519
+  hashed 750/1519
+  hashed 1000/1519
+  hashed 1250/1519
+  hashed 1500/1519
+  + 23 accepted embedding pairs
+        scope  images  images_in_duplicate_groups  pairs  label_mismatch_pairs
+         msid   765.0                          76     18                     1
+      msld_v2   754.0                          51      3                     0
+cross-dataset     NaN                          95     67                     0
+Estimating ITA ...
+ita_band            dark  intermediate  light  unknown
+dataset label                                         
+msid    chickenpox     7            16     83        0
+        healthy       32            45    215        0
+        measles       29            22     39        0
+        mpox         116            67     88        6
+msld_v2 chickenpox    12            22     40        0
+        cowpox        16            22     28        0
+        healthy       30            33     51        0
+        hfmd          31            43     87        0
+        measles       12             8     35        0
+        mpox         119            70     95        0
+Wrote 52 splits. P2/P3: no shared images or duplicate groups.
+P1 (naive): duplicate groups shared by train(+val) and test, mean per split:
+task    train_dataset
+4class  msid             2.0
+        msld_v2          0.0
+binary  msid             3.4
+        msld_v2          0.2
+== [11:56:52 UTC, +11 min] 18. MCSI: download, index, crop-aware duplicate audit against MSLD v2.0 and MSID
+downloading https://zenodo.org/records/8360076/files/MCSI.zip?download=1
+MCSI: 400 listed, 400 found (0 missing: []), 1 exact duplicates inside MCSI dropped
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  ORB checked 100/399
+  ORB checked 200/399
+  ORB checked 300/399
+MCSI images: 399; duplicates of a study image: 106 (MSLD v2.0 69, MSID 72)
+flagged pairs by reason: {'hash+emb+orb': 93, 'orb': 88, 'emb+orb': 18, 'emb': 4, 'hash+orb': 1}
+borderline ORB pairs (10 <= inliers < 25, not flagged otherwise): 45
+clean external test set: 293 images
+
+            images  dup_msld  dup_msid  duplicate_any  clean
+label                                                       
+acne           100         0         0              0    100
+chickenpox     100         6         0              6     94
+healthy         99         1         6              6     93
+mpox           100        62        66             94      6
+
+clean set by ITA band: {'light': 123, 'intermediate': 101, 'dark': 66, 'unknown': 3}
+Spearman rho between our ITA and the ITA shipped with MCSI: 0.936
+== [12:02:40 UTC, +17 min] 8. control pool (for 'rand')
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Sampled 1200 look-alike images from 24 conditions
+sampled: 1200 images, 24 conditions, up to 50 each
+removed as hash duplicates of study images or of each other: 5
+removed by embedding cosine >= 0.92 with a study image: 0
+final pool: 1195 images
+
+by condition:
+condition
+acne                                                     50
+acne vulgaris                                            50
+acquired autoimmune bullous diseaseherpes gestationis    50
+dariers disease                                          50
+epidermolysis bullosa                                    50
+fixed eruptions                                          50
+hailey hailey disease                                    50
+folliculitis                                             50
+pityriasis rosea                                         50
+prurigo nodularis                                        50
+keratosis pilaris                                        50
+milia                                                    50
+myiasis                                                  50
+nematode infection                                       50
+neurotic excoriations                                    50
+pityriasis lichenoides chronica                          50
+stevens johnson syndrome                                 50
+tick bite                                                50
+pustular psoriasis                                       50
+scabies                                                  50
+tungiasis                                                50
+urticaria                                                50
+erythema multiforme                                      48
+drug eruption                                            47
+
+by Fitzpatrick type:
+fitzpatrick
+-1     70
+ 1    207
+ 2    255
+ 3    230
+ 4    218
+ 5    143
+ 6     72
+
+by ITA band:
+ita_band
+intermediate    437
+dark            393
+light           355
+unknown          10
+control candidates drawn: 1258 (target 1195 plus 5% margin)
+removed as duplicates of study images or of each other: 6 (hash), 0 (embedding)
+final control pool: 1195 images from 90 conditions
+
+Fitzpatrick type, look-alike vs control:
+             look-alike pool  control pool
+fitzpatrick                               
+-1                        70            70
+ 1                       207           207
+ 2                       255           255
+ 3                       230           230
+ 4                       218           218
+ 5                       143           143
+ 6                        72            72
+
+control by ITA band:
+ita_band
+dark            429
+intermediate    383
+light           369
+unknown          14
+
+control conditions (top 40):
+condition
+melanoma                           21
+kaposi sarcoma                     21
+scleroderma                        20
+acanthosis nigricans               19
+sarcoidosis                        19
+pilar cyst                         18
+fordyce spots                      18
+sun damaged skin                   18
+xeroderma pigmentosum              18
+pityriasis rubra pilaris           18
+necrobiosis lipoidica              18
+lymphangioma                       18
+psoriasis                          17
+calcinosis cutis                   17
+nevocytic nevus                    17
+keloid                             17
+urticaria pigmentosa               16
+lupus subacute                     16
+lichen planus                      16
+lyme disease                       16
+nevus sebaceous of jadassohn       16
+factitial dermatitis               16
+mycosis fungoides                  16
+neutrophilic dermatoses            15
+aplasia cutis                      15
+striae                             15
+basal cell carcinoma               15
+actinic keratosis                  15
+squamous cell carcinoma            15
+lichen amyloidosis                 15
+pyogenic granuloma                 15
+neurodermatitis                    15
+drug induced pigmentary changes    15
+dermatomyositis                    14
+congenital nevus                   14
+granuloma annulare                 14
+syringoma                          14
+epidermal nevus                    14
+granuloma pyogenic                 14
+seborrheic dermatitis              14
+== [12:13:02 UTC, +27 min] 15. whole-atlas pool
+atlas: 16557 images from 114 conditions
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+atlas images (usable, exact duplicates dropped): 16557 from 114 conditions
+removed as hash duplicates of study images: 0
+removed by embedding cosine >= 0.92 with a study image (not already caught by hashes): 0
+final atlas pool: 16557 images from 114 conditions
+images per condition: median 102, min 53, max 653
+
+by Fitzpatrick type:
+fitzpatrick
+-1     562
+ 1    2944
+ 2    4804
+ 3    3306
+ 4    2780
+ 5    1529
+ 6     632
+
+by ITA band:
+ita_band
+intermediate    5752
+dark            5437
+light           5249
+unknown          119
+
+conditions (largest 30):
+condition
+psoriasis                      653
+squamous cell carcinoma        580
+lichen planus                  491
+basal cell carcinoma           468
+allergic contact dermatitis    430
+lupus erythematosus            410
+neutrophilic dermatoses        358
+sarcoidosis                    349
+photodermatoses                348
+folliculitis                   340
+scabies                        339
+acne vulgaris                  335
+scleroderma                    309
+pityriasis rubra pilaris       278
+melanoma                       261
+nematode infection             260
+erythema multiforme            236
+granuloma annulare             209
+eczema                         204
+drug eruption                  199
+pityriasis rosea               193
+neurofibromatosis              189
+porokeratosis actinic          183
+mycosis fungoides              182
+acne                           182
+actinic keratosis              175
+hailey hailey disease          174
+prurigo nodularis              170
+vitiligo                       165
+keloid                         156
+== [13:31:57 UTC, +106 min] 9a. smoke test (1 epoch, with the external test set)
+Image cache: 1519 new, 0 reused -> /tmp/mpoxgen_img288
+Image cache: 16557 new, 0 reused -> /tmp/mpoxgen_img288
+Image cache: 399 new, 0 reused -> /tmp/mpoxgen_img288
+6 runs -> results_methods_smoke/  (pools: atlas 16557)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[1/6] binary_P3_msid_to_msld_v2_rep0 mobilenetv3_large_100 erm: bal_acc=0.599 sens=0.956 spec=0.241  | mcsi: bal_acc=0.630 (0.47 min; 1.83 h)
+[2/6] binary_P3_msld_v2_to_msid_rep0 mobilenetv3_large_100 erm: bal_acc=0.673 sens=0.750 spec=0.596  | mcsi: bal_acc=0.671 (0.19 min; 1.83 h)
+[3/6] binary_P3_msid_to_msld_v2_rep0 mobilenetv3_large_100 factor: bal_acc=0.709 sens=0.892 spec=0.526  | mcsi: bal_acc=0.769 (0.2 min; 1.84 h)
+[4/6] binary_P3_msld_v2_to_msid_rep0 mobilenetv3_large_100 factor: bal_acc=0.741 sens=0.566 spec=0.915  | mcsi: bal_acc=0.718 (0.19 min; 1.84 h)
+[5/6] binary_P3_msid_to_msld_v2_rep0 mobilenetv3_large_100 hod: bal_acc=0.717 sens=0.825 spec=0.610  | mcsi: bal_acc=0.878 (0.2 min; 1.84 h)
+[6/6] binary_P3_msld_v2_to_msid_rep0 mobilenetv3_large_100 hod: bal_acc=0.840 sens=0.770 spec=0.909  | mcsi: bal_acc=0.860 (0.19 min; 1.85 h)
+Collected 6 runs into results_methods_smoke/all_runs.csv
+== [13:36:26 UTC, +110 min] 9b. pre-specified methods on the P3 training splits; every model also predicts clean MCSI
+Image cache: 0 new, 1519 reused -> /tmp/mpoxgen_img288
+Image cache: 0 new, 1195 reused -> /tmp/mpoxgen_img288
+Image cache: 0 new, 16557 reused -> /tmp/mpoxgen_img288
+Image cache: 0 new, 399 reused -> /tmp/mpoxgen_img288
+108 runs -> results_external/  (pools: control 1195, atlas 16557)
+[1/108] binary_P3_msid_to_msld_v2_rep0 resnet50 erm: bal_acc=0.673 sens=0.944 spec=0.401  | mcsi: bal_acc=0.691 (1.27 min; 1.87 h)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2/108] binary_P3_msid_to_msld_v2_rep0 resnet50 factor: bal_acc=0.756 sens=0.928 spec=0.583  | mcsi: bal_acc=0.789 (2.86 min; 1.92 h)
+[3/108] binary_P3_msid_to_msld_v2_rep0 resnet50 atlas: bal_acc=0.738 sens=0.952 spec=0.524  | mcsi: bal_acc=0.759 (1.88 min; 1.95 h)
+[4/108] binary_P3_msid_to_msld_v2_rep0 resnet50 hod: bal_acc=0.727 sens=0.912 spec=0.542  | mcsi: bal_acc=0.848 (1.75 min; 1.98 h)
+[5/108] binary_P3_msid_to_msld_v2_rep0 resnet50 rand: bal_acc=0.737 sens=0.972 spec=0.502  | mcsi: bal_acc=0.779 (2.15 min; 2.02 h)
+[6/108] binary_P3_msid_to_msld_v2_rep0 resnet50 factor_notone: bal_acc=0.744 sens=0.976 spec=0.511  | mcsi: bal_acc=0.741 (2.46 min; 2.06 h)
+[7/108] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0 erm: bal_acc=0.686 sens=0.904 spec=0.467  | mcsi: bal_acc=0.592 (0.79 min; 2.07 h)
+[8/108] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0 factor: bal_acc=0.697 sens=0.916 spec=0.478  | mcsi: bal_acc=0.774 (1.33 min; 2.09 h)
+[9/108] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0 atlas: bal_acc=0.683 sens=0.908 spec=0.458  | mcsi: bal_acc=0.746 (1.01 min; 2.11 h)
+[10/108] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0 hod: bal_acc=0.789 sens=0.793 spec=0.785  | mcsi: bal_acc=0.858 (1.73 min; 2.14 h)
+[11/108] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0 rand: bal_acc=0.731 sens=0.920 spec=0.542  | mcsi: bal_acc=0.824 (1.22 min; 2.16 h)
+[12/108] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0 factor_notone: bal_acc=0.730 sens=0.932 spec=0.529  | mcsi: bal_acc=0.798 (1.84 min; 2.19 h)
+[13/108] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224 erm: bal_acc=0.782 sens=0.924 spec=0.640  | mcsi: bal_acc=0.681 (0.57 min; 2.20 h)
+[14/108] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224 factor: bal_acc=0.780 sens=0.928 spec=0.632  | mcsi: bal_acc=0.814 (1.42 min; 2.22 h)
+[15/108] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224 atlas: bal_acc=0.761 sens=0.689 spec=0.833  | mcsi: bal_acc=0.875 (1.19 min; 2.24 h)
+[16/108] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224 hod: bal_acc=0.807 sens=0.845 spec=0.770  | mcsi: bal_acc=0.868 (1.62 min; 2.27 h)
+[17/108] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224 rand: bal_acc=0.773 sens=0.853 spec=0.693  | mcsi: bal_acc=0.813 (1.3 min; 2.29 h)
+[18/108] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224 factor_notone: bal_acc=0.806 sens=0.853 spec=0.759  | mcsi: bal_acc=0.868 (1.11 min; 2.31 h)
+[19/108] binary_P3_msid_to_msld_v2_rep1 resnet50 erm: bal_acc=0.635 sens=0.980 spec=0.289  | mcsi: bal_acc=0.584 (0.84 min; 2.33 h)
+[20/108] binary_P3_msid_to_msld_v2_rep1 resnet50 factor: bal_acc=0.704 sens=0.976 spec=0.432  | mcsi: bal_acc=0.743 (2.47 min; 2.37 h)
+[21/108] binary_P3_msid_to_msld_v2_rep1 resnet50 atlas: bal_acc=0.750 sens=0.829 spec=0.671  | mcsi: bal_acc=0.830 (3.23 min; 2.42 h)
+[22/108] binary_P3_msid_to_msld_v2_rep1 resnet50 hod: bal_acc=0.745 sens=0.825 spec=0.664  | mcsi: bal_acc=0.850 (3.92 min; 2.49 h)
+[23/108] binary_P3_msid_to_msld_v2_rep1 resnet50 rand: bal_acc=0.740 sens=0.857 spec=0.623  | mcsi: bal_acc=0.835 (2.55 min; 2.53 h)
+[24/108] binary_P3_msid_to_msld_v2_rep1 resnet50 factor_notone: bal_acc=0.707 sens=0.992 spec=0.421  | mcsi: bal_acc=0.714 (2.04 min; 2.56 h)
+[25/108] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0 erm: bal_acc=0.672 sens=0.884 spec=0.461  | mcsi: bal_acc=0.759 (0.8 min; 2.58 h)
+[26/108] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0 factor: bal_acc=0.767 sens=0.841 spec=0.693  | mcsi: bal_acc=0.863 (1.69 min; 2.61 h)
+[27/108] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0 atlas: bal_acc=0.737 sens=0.884 spec=0.590  | mcsi: bal_acc=0.826 (1.68 min; 2.63 h)
+[28/108] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0 hod: bal_acc=0.758 sens=0.892 spec=0.623  | mcsi: bal_acc=0.816 (1.09 min; 2.65 h)
+[29/108] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0 rand: bal_acc=0.682 sens=0.916 spec=0.447  | mcsi: bal_acc=0.722 (0.9 min; 2.67 h)
+[30/108] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0 factor_notone: bal_acc=0.751 sens=0.892 spec=0.610  | mcsi: bal_acc=0.766 (1.59 min; 2.69 h)
+[31/108] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224 erm: bal_acc=0.715 sens=0.948 spec=0.482  | mcsi: bal_acc=0.674 (0.56 min; 2.70 h)
+[32/108] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224 factor: bal_acc=0.774 sens=0.880 spec=0.667  | mcsi: bal_acc=0.776 (2.05 min; 2.74 h)
+[33/108] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224 atlas: bal_acc=0.776 sens=0.849 spec=0.704  | mcsi: bal_acc=0.816 (1.4 min; 2.76 h)
+[34/108] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224 hod: bal_acc=0.791 sens=0.920 spec=0.662  | mcsi: bal_acc=0.793 (1.3 min; 2.78 h)
+[35/108] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224 rand: bal_acc=0.731 sens=0.789 spec=0.673  | mcsi: bal_acc=0.868 (1.2 min; 2.80 h)
+[36/108] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224 factor_notone: bal_acc=0.774 sens=0.876 spec=0.671  | mcsi: bal_acc=0.856 (1.75 min; 2.83 h)
+[37/108] binary_P3_msid_to_msld_v2_rep2 resnet50 erm: bal_acc=0.703 sens=0.956 spec=0.450  | mcsi: bal_acc=0.791 (1.22 min; 2.85 h)
+[38/108] binary_P3_msid_to_msld_v2_rep2 resnet50 factor: bal_acc=0.731 sens=0.948 spec=0.513  | mcsi: bal_acc=0.739 (2.06 min; 2.89 h)
+[39/108] binary_P3_msid_to_msld_v2_rep2 resnet50 atlas: bal_acc=0.749 sens=0.904 spec=0.594  | mcsi: bal_acc=0.818 (1.88 min; 2.92 h)
+[40/108] binary_P3_msid_to_msld_v2_rep2 resnet50 hod: bal_acc=0.748 sens=0.908 spec=0.588  | mcsi: bal_acc=0.868 (2.7 min; 2.97 h)
+[41/108] binary_P3_msid_to_msld_v2_rep2 resnet50 rand: bal_acc=0.766 sens=0.833 spec=0.700  | mcsi: bal_acc=0.851 (3.1 min; 3.02 h)
+[42/108] binary_P3_msid_to_msld_v2_rep2 resnet50 factor_notone: bal_acc=0.746 sens=0.888 spec=0.603  | mcsi: bal_acc=0.806 (3.02 min; 3.07 h)
+[43/108] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0 erm: bal_acc=0.688 sens=0.920 spec=0.456  | mcsi: bal_acc=0.709 (0.7 min; 3.08 h)
+[44/108] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0 factor: bal_acc=0.739 sens=0.904 spec=0.575  | mcsi: bal_acc=0.779 (1.61 min; 3.11 h)
+[45/108] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0 atlas: bal_acc=0.759 sens=0.817 spec=0.702  | mcsi: bal_acc=0.804 (1.69 min; 3.13 h)
+[46/108] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0 hod: bal_acc=0.783 sens=0.845 spec=0.721  | mcsi: bal_acc=0.881 (1.81 min; 3.17 h)
+[47/108] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0 rand: bal_acc=0.736 sens=0.849 spec=0.623  | mcsi: bal_acc=0.813 (1.11 min; 3.18 h)
+[48/108] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0 factor_notone: bal_acc=0.766 sens=0.896 spec=0.636  | mcsi: bal_acc=0.754 (1.42 min; 3.21 h)
+[49/108] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224 erm: bal_acc=0.769 sens=0.912 spec=0.625  | mcsi: bal_acc=0.764 (0.6 min; 3.22 h)
+[50/108] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224 factor: bal_acc=0.758 sens=0.681 spec=0.836  | mcsi: bal_acc=0.900 (1.64 min; 3.25 h)
+[51/108] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224 atlas: bal_acc=0.784 sens=0.781 spec=0.787  | mcsi: bal_acc=0.868 (1.5 min; 3.27 h)
+[52/108] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224 hod: bal_acc=0.801 sens=0.821 spec=0.781  | mcsi: bal_acc=0.833 (1.73 min; 3.30 h)
+[53/108] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224 rand: bal_acc=0.801 sens=0.857 spec=0.746  | mcsi: bal_acc=0.870 (1.5 min; 3.32 h)
+[54/108] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224 factor_notone: bal_acc=0.775 sens=0.697 spec=0.853  | mcsi: bal_acc=0.906 (2.18 min; 3.36 h)
+[55/108] binary_P3_msld_v2_to_msid_rep0 resnet50 erm: bal_acc=0.852 sens=0.734 spec=0.970  | mcsi: bal_acc=0.816 (1.38 min; 3.38 h)
+[56/108] binary_P3_msld_v2_to_msid_rep0 resnet50 factor: bal_acc=0.826 sens=0.680 spec=0.973  | mcsi: bal_acc=0.861 (3.56 min; 3.44 h)
+[57/108] binary_P3_msld_v2_to_msid_rep0 resnet50 atlas: bal_acc=0.846 sens=0.734 spec=0.958  | mcsi: bal_acc=0.866 (3.77 min; 3.51 h)
+[58/108] binary_P3_msld_v2_to_msid_rep0 resnet50 hod: bal_acc=0.825 sens=0.684 spec=0.966  | mcsi: bal_acc=0.846 (2.97 min; 3.56 h)
+[59/108] binary_P3_msld_v2_to_msid_rep0 resnet50 rand: bal_acc=0.847 sens=0.738 spec=0.956  | mcsi: bal_acc=0.866 (4.17 min; 3.63 h)
+[60/108] binary_P3_msld_v2_to_msid_rep0 resnet50 factor_notone: bal_acc=0.780 sens=0.607 spec=0.953  | mcsi: bal_acc=0.863 (2.6 min; 3.67 h)
+[61/108] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0 erm: bal_acc=0.834 sens=0.705 spec=0.964  | mcsi: bal_acc=0.855 (0.96 min; 3.69 h)
+[62/108] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0 factor: bal_acc=0.859 sens=0.795 spec=0.924  | mcsi: bal_acc=0.878 (2.22 min; 3.72 h)
+[63/108] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0 atlas: bal_acc=0.826 sens=0.689 spec=0.964  | mcsi: bal_acc=0.903 (2.49 min; 3.76 h)
+[64/108] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0 hod: bal_acc=0.854 sens=0.742 spec=0.966  | mcsi: bal_acc=0.905 (2.1 min; 3.80 h)
+[65/108] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0 rand: bal_acc=0.840 sens=0.730 spec=0.951  | mcsi: bal_acc=0.853 (1.7 min; 3.83 h)
+[66/108] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0 factor_notone: bal_acc=0.867 sens=0.795 spec=0.939  | mcsi: bal_acc=0.828 (1.42 min; 3.85 h)
+[67/108] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224 erm: bal_acc=0.892 sens=0.803 spec=0.981  | mcsi: bal_acc=0.893 (0.65 min; 3.86 h)
+[68/108] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224 factor: bal_acc=0.878 sens=0.770 spec=0.985  | mcsi: bal_acc=0.860 (1.86 min; 3.89 h)
+[69/108] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224 atlas: bal_acc=0.871 sens=0.758 spec=0.983  | mcsi: bal_acc=0.913 (2.56 min; 3.94 h)
+[70/108] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224 hod: bal_acc=0.840 sens=0.701 spec=0.979  | mcsi: bal_acc=0.947 (1.62 min; 3.96 h)
+[71/108] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224 rand: bal_acc=0.850 sens=0.734 spec=0.966  | mcsi: bal_acc=0.890 (1.29 min; 3.99 h)
+[72/108] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224 factor_notone: bal_acc=0.894 sens=0.836 spec=0.951  | mcsi: bal_acc=0.878 (1.64 min; 4.01 h)
+[73/108] binary_P3_msld_v2_to_msid_rep1 resnet50 erm: bal_acc=0.851 sens=0.742 spec=0.960  | mcsi: bal_acc=0.801 (1.06 min; 4.03 h)
+[74/108] binary_P3_msld_v2_to_msid_rep1 resnet50 factor: bal_acc=0.818 sens=0.676 spec=0.960  | mcsi: bal_acc=0.855 (3.42 min; 4.09 h)
+[75/108] binary_P3_msld_v2_to_msid_rep1 resnet50 atlas: bal_acc=0.839 sens=0.705 spec=0.973  | mcsi: bal_acc=0.846 (4.17 min; 4.16 h)
+[76/108] binary_P3_msld_v2_to_msid_rep1 resnet50 hod: bal_acc=0.810 sens=0.652 spec=0.968  | mcsi: bal_acc=0.875 (3.51 min; 4.22 h)
+[77/108] binary_P3_msld_v2_to_msid_rep1 resnet50 rand: bal_acc=0.841 sens=0.738 spec=0.945  | mcsi: bal_acc=0.845 (2.97 min; 4.27 h)
+[78/108] binary_P3_msld_v2_to_msid_rep1 resnet50 factor_notone: bal_acc=0.811 sens=0.656 spec=0.966  | mcsi: bal_acc=0.885 (4.12 min; 4.34 h)
+[79/108] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0 erm: bal_acc=0.805 sens=0.656 spec=0.953  | mcsi: bal_acc=0.758 (0.61 min; 4.35 h)
+[80/108] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0 factor: bal_acc=0.860 sens=0.779 spec=0.941  | mcsi: bal_acc=0.848 (3.17 min; 4.40 h)
+[81/108] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0 atlas: bal_acc=0.858 sens=0.750 spec=0.966  | mcsi: bal_acc=0.890 (1.93 min; 4.43 h)
+[82/108] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0 hod: bal_acc=0.873 sens=0.779 spec=0.968  | mcsi: bal_acc=0.906 (2.54 min; 4.47 h)
+[83/108] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0 rand: bal_acc=0.807 sens=0.639 spec=0.975  | mcsi: bal_acc=0.885 (2.11 min; 4.51 h)
+[84/108] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0 factor_notone: bal_acc=0.842 sens=0.721 spec=0.962  | mcsi: bal_acc=0.830 (1.85 min; 4.54 h)
+[85/108] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224 erm: bal_acc=0.891 sens=0.820 spec=0.962  | mcsi: bal_acc=0.858 (0.6 min; 4.55 h)
+[86/108] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224 factor: bal_acc=0.857 sens=0.738 spec=0.977  | mcsi: bal_acc=0.923 (2.94 min; 4.60 h)
+[87/108] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224 atlas: bal_acc=0.826 sens=0.664 spec=0.987  | mcsi: bal_acc=0.866 (1.93 min; 4.63 h)
+[88/108] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224 hod: bal_acc=0.822 sens=0.676 spec=0.968  | mcsi: bal_acc=0.920 (1.84 min; 4.66 h)
+[89/108] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224 rand: bal_acc=0.856 sens=0.725 spec=0.987  | mcsi: bal_acc=0.901 (2.77 min; 4.71 h)
+[90/108] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224 factor_notone: bal_acc=0.865 sens=0.766 spec=0.964  | mcsi: bal_acc=0.913 (1.86 min; 4.74 h)
+[91/108] binary_P3_msld_v2_to_msid_rep2 resnet50 erm: bal_acc=0.860 sens=0.750 spec=0.970  | mcsi: bal_acc=0.880 (1.5 min; 4.77 h)
+[92/108] binary_P3_msld_v2_to_msid_rep2 resnet50 factor: bal_acc=0.834 sens=0.734 spec=0.934  | mcsi: bal_acc=0.798 (1.92 min; 4.80 h)
+[93/108] binary_P3_msld_v2_to_msid_rep2 resnet50 atlas: bal_acc=0.849 sens=0.738 spec=0.960  | mcsi: bal_acc=0.871 (3.5 min; 4.86 h)
+[94/108] binary_P3_msld_v2_to_msid_rep2 resnet50 hod: bal_acc=0.821 sens=0.680 spec=0.962  | mcsi: bal_acc=0.870 (4.18 min; 4.93 h)
+[95/108] binary_P3_msld_v2_to_msid_rep2 resnet50 rand: bal_acc=0.856 sens=0.742 spec=0.970  | mcsi: bal_acc=0.880 (3.77 min; 4.99 h)
+[96/108] binary_P3_msld_v2_to_msid_rep2 resnet50 factor_notone: bal_acc=0.829 sens=0.697 spec=0.962  | mcsi: bal_acc=0.855 (4.25 min; 5.06 h)
+[97/108] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0 erm: bal_acc=0.802 sens=0.648 spec=0.956  | mcsi: bal_acc=0.875 (0.73 min; 5.07 h)
+[98/108] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0 factor: bal_acc=0.820 sens=0.693 spec=0.947  | mcsi: bal_acc=0.861 (2.43 min; 5.11 h)
+[99/108] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0 atlas: bal_acc=0.815 sens=0.672 spec=0.958  | mcsi: bal_acc=0.836 (1.23 min; 5.13 h)
+[100/108] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0 hod: bal_acc=0.848 sens=0.742 spec=0.953  | mcsi: bal_acc=0.871 (1.53 min; 5.16 h)
+[101/108] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0 rand: bal_acc=0.851 sens=0.742 spec=0.960  | mcsi: bal_acc=0.906 (1.89 min; 5.19 h)
+[102/108] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0 factor_notone: bal_acc=0.858 sens=0.762 spec=0.953  | mcsi: bal_acc=0.871 (3.1 min; 5.24 h)
+[103/108] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224 erm: bal_acc=0.883 sens=0.783 spec=0.983  | mcsi: bal_acc=0.883 (0.78 min; 5.26 h)
+[104/108] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224 factor: bal_acc=0.865 sens=0.758 spec=0.973  | mcsi: bal_acc=0.910 (2.16 min; 5.29 h)
+[105/108] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224 atlas: bal_acc=0.850 sens=0.713 spec=0.987  | mcsi: bal_acc=0.895 (1.92 min; 5.33 h)
+[106/108] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224 hod: bal_acc=0.859 sens=0.738 spec=0.981  | mcsi: bal_acc=0.908 (1.51 min; 5.35 h)
+[107/108] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224 rand: bal_acc=0.876 sens=0.766 spec=0.985  | mcsi: bal_acc=0.903 (2.13 min; 5.39 h)
+[108/108] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224 factor_notone: bal_acc=0.872 sens=0.775 spec=0.970  | mcsi: bal_acc=0.875 (2.59 min; 5.43 h)
+Collected 108 runs into results_external/all_runs.csv
+== [17:11:21 UTC, +325 min] 10-13, 17, 19. summaries and statistics
+## P3: cross-dataset, mean ± SD over models and seeds
+| Method | MSID → MSLD v2.0: bal. acc. | MSID → MSLD v2.0: spec. | MSID → MSLD v2.0: sens. | MSLD v2.0 → MSID: bal. acc. | MSLD v2.0 → MSID: spec. | MSLD v2.0 → MSID: sens. | Mean bal. acc. (both) | n runs |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ERM (standard fine-tuning) | 0.703 ± 0.047 | 0.475 ± 0.107 | 0.931 ± 0.029 | 0.852 ± 0.034 | 0.967 ± 0.010 | 0.738 ± 0.060 | 0.777 ± 0.087 | 18 |
+| Random-negative control | 0.744 ± 0.033 | 0.616 ± 0.100 | 0.872 ± 0.055 | 0.847 ± 0.018 | 0.966 ± 0.015 | 0.728 ± 0.035 | 0.796 ± 0.059 | 18 |
+| Atlas negatives, flat head | 0.749 ± 0.029 | 0.652 ± 0.121 | 0.846 ± 0.079 | 0.842 ± 0.018 | 0.971 ± 0.012 | 0.714 ± 0.034 | 0.795 ± 0.053 | 18 |
+| HOD (Roy et al. 2022) | 0.772 ± 0.028 | 0.682 ± 0.088 | 0.862 ± 0.047 | 0.839 ± 0.021 | 0.968 ± 0.008 | 0.710 ± 0.041 | 0.806 ± 0.042 | 18 |
+| FACTOR without tone matching | 0.755 ± 0.029 | 0.621 ± 0.131 | 0.889 ± 0.085 | 0.846 ± 0.035 | 0.958 ± 0.010 | 0.735 ± 0.072 | 0.801 ± 0.056 | 18 |
+| FACTOR (proposed) | 0.745 ± 0.030 | 0.601 ± 0.123 | 0.889 ± 0.087 | 0.846 ± 0.022 | 0.957 ± 0.021 | 0.736 ± 0.044 | 0.796 ± 0.058 | 18 |
+
+## P3 balanced accuracy by backbone (mean over directions and seeds)
+| method | efficientnet_b0 | resnet50 | vit_small_patch16_224 |
+| --- | --- | --- | --- |
+| erm | 0.748 | 0.762 | 0.822 |
+| rand | 0.774 | 0.798 | 0.814 |
+| atlas | 0.78 | 0.795 | 0.811 |
+| hod | 0.817 | 0.779 | 0.82 |
+| factor_notone | 0.802 | 0.769 | 0.831 |
+| factor | 0.79 | 0.778 | 0.819 |
+
+## Skin tone (sensitivity: MSLD v2.0 → MSID; specificity: MSID → MSLD v2.0)
+| Method | Sens. dark | Sens. light | Sens. gap (dark-light) | Worst-band sens. | Spec. dark | Spec. light | Spec. gap (dark-light) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ERM (standard fine-tuning) | 0.859 | 0.581 | +0.278 | 0.581 | 0.400 | 0.514 | -0.114 |
+| Random-negative control | 0.849 | 0.563 | +0.286 | 0.563 | 0.553 | 0.651 | -0.097 |
+| Atlas negatives, flat head | 0.841 | 0.529 | +0.313 | 0.529 | 0.584 | 0.679 | -0.095 |
+| HOD (Roy et al. 2022) | 0.823 | 0.551 | +0.272 | 0.551 | 0.637 | 0.712 | -0.075 |
+| FACTOR without tone matching | 0.850 | 0.581 | +0.269 | 0.580 | 0.560 | 0.647 | -0.087 |
+| FACTOR (proposed) | 0.851 | 0.583 | +0.269 | 0.583 | 0.536 | 0.622 | -0.086 |
+
+## % of MSLD v2.0 images called mpox by MSID-trained models
+| method | chickenpox | cowpox | healthy | hfmd | measles | mpox |
+| --- | --- | --- | --- | --- | --- | --- |
+| erm | 74.3 | 94.4 | 24.5 | 47.1 | 41.0 | 93.1 |
+| rand | 71.9 | 73.7 | 22.1 | 21.8 | 29.2 | 87.2 |
+| atlas | 72.5 | 68.5 | 19.0 | 15.7 | 29.4 | 84.6 |
+| hod | 64.6 | 70.9 | 15.8 | 14.9 | 19.8 | 86.2 |
+| factor_notone | 73.3 | 73.6 | 21.2 | 19.9 | 30.9 | 88.9 |
+| factor | 73.0 | 73.1 | 20.8 | 23.5 | 39.7 | 88.9 |
+
+## Paired Wilcoxon signed-rank tests (P3 balanced accuracy)
+| Comparison | pairs | mean diff | wins | Wilcoxon p |
+| --- | --- | --- | --- | --- |
+| FACTOR (proposed) vs ERM (standard fine-tuning) | 18 | +0.018 | 10 | 0.1540 |
+| FACTOR without tone matching vs ERM (standard fine-tuning) | 18 | +0.024 | 13 | 0.0432 |
+| Atlas negatives, flat head vs ERM (standard fine-tuning) | 18 | +0.018 | 9 | 0.2288 |
+| HOD (Roy et al. 2022) vs ERM (standard fine-tuning) | 18 | +0.028 | 12 | 0.0539 |
+| Random-negative control vs ERM (standard fine-tuning) | 18 | +0.018 | 11 | 0.1084 |
+| FACTOR (proposed) vs Atlas negatives, flat head | 18 | +0.000 | 10 | 1.0000 |
+| FACTOR (proposed) vs HOD (Roy et al. 2022) | 18 | -0.010 | 9 | 0.2837 |
+| FACTOR (proposed) vs FACTOR without tone matching | 18 | -0.005 | 6 | 0.2121 |
+| Atlas negatives, flat head vs Random-negative control | 18 | -0.000 | 7 | 0.7660 |
+
+## Paired comparisons per direction (95% bootstrap CI of the mean difference; Holm-adjusted within direction and metric)
+
+| direction | metric | comparison | pairs | mean diff [95% CI] | wins/losses | p | p (Holm) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MSID → MSLD v2.0 | balanced_accuracy | factor vs erm | 9 | +0.043 [+0.020, +0.065] | 7/2 | 0.0195 | 0.1172 |
+| MSID → MSLD v2.0 | balanced_accuracy | factor_notone vs erm | 9 | +0.053 [+0.037, +0.068] | 9/0 | 0.0039 | 0.0352 |
+| MSID → MSLD v2.0 | balanced_accuracy | atlas vs erm | 9 | +0.046 [+0.020, +0.071] | 7/2 | 0.0273 | 0.1367 |
+| MSID → MSLD v2.0 | balanced_accuracy | hod vs erm | 9 | +0.069 [+0.050, +0.089] | 9/0 | 0.0039 | 0.0352 |
+| MSID → MSLD v2.0 | balanced_accuracy | rand vs erm | 9 | +0.041 [+0.021, +0.063] | 8/1 | 0.0117 | 0.0820 |
+| MSID → MSLD v2.0 | balanced_accuracy | factor vs atlas | 9 | -0.004 [-0.019, +0.011] | 4/5 | 0.5703 | 1.0000 |
+| MSID → MSLD v2.0 | balanced_accuracy | factor vs hod | 9 | -0.027 [-0.049, -0.006] | 2/7 | 0.0547 | 0.2188 |
+| MSID → MSLD v2.0 | balanced_accuracy | factor vs factor_notone | 9 | -0.010 [-0.021, +0.001] | 2/7 | 0.0977 | 0.2930 |
+| MSID → MSLD v2.0 | balanced_accuracy | atlas vs rand | 9 | +0.005 [-0.015, +0.025] | 5/4 | 0.8203 | 1.0000 |
+| MSID → MSLD v2.0 | auroc | factor vs erm | 9 | +0.030 [+0.016, +0.043] | 8/1 | 0.0078 | 0.0547 |
+| MSID → MSLD v2.0 | auroc | factor_notone vs erm | 9 | +0.039 [+0.026, +0.053] | 9/0 | 0.0039 | 0.0352 |
+| MSID → MSLD v2.0 | auroc | atlas vs erm | 9 | +0.028 [+0.009, +0.047] | 7/2 | 0.0273 | 0.1367 |
+| MSID → MSLD v2.0 | auroc | hod vs erm | 9 | +0.046 [+0.031, +0.061] | 9/0 | 0.0039 | 0.0352 |
+| MSID → MSLD v2.0 | auroc | rand vs erm | 9 | +0.018 [-0.001, +0.037] | 6/3 | 0.0977 | 0.2969 |
+| MSID → MSLD v2.0 | auroc | factor vs atlas | 9 | +0.002 [-0.008, +0.013] | 3/6 | 1.0000 | 1.0000 |
+| MSID → MSLD v2.0 | auroc | factor vs hod | 9 | -0.016 [-0.028, -0.006] | 1/8 | 0.0195 | 0.1172 |
+| MSID → MSLD v2.0 | auroc | factor vs factor_notone | 9 | -0.009 [-0.017, -0.002] | 3/6 | 0.0742 | 0.2969 |
+| MSID → MSLD v2.0 | auroc | atlas vs rand | 9 | +0.010 [-0.014, +0.036] | 5/4 | 0.5703 | 1.0000 |
+| MSID → MSLD v2.0 | mpox_specificity | factor vs erm | 9 | +0.126 [+0.072, +0.177] | 8/1 | 0.0078 | 0.0547 |
+| MSID → MSLD v2.0 | mpox_specificity | factor_notone vs erm | 9 | +0.147 [+0.116, +0.176] | 9/0 | 0.0039 | 0.0352 |
+| MSID → MSLD v2.0 | mpox_specificity | atlas vs erm | 9 | +0.177 [+0.112, +0.245] | 8/1 | 0.0078 | 0.0547 |
+| MSID → MSLD v2.0 | mpox_specificity | hod vs erm | 9 | +0.207 [+0.156, +0.267] | 9/0 | 0.0039 | 0.0352 |
+| MSID → MSLD v2.0 | mpox_specificity | rand vs erm | 9 | +0.142 [+0.080, +0.210] | 8/1 | 0.0078 | 0.0547 |
+| MSID → MSLD v2.0 | mpox_specificity | factor vs atlas | 9 | -0.051 [-0.126, +0.020] | 4/5 | 0.3594 | 0.9023 |
+| MSID → MSLD v2.0 | mpox_specificity | factor vs hod | 9 | -0.081 [-0.168, -0.002] | 4/5 | 0.1641 | 0.6562 |
+| MSID → MSLD v2.0 | mpox_specificity | factor vs factor_notone | 9 | -0.020 [-0.063, +0.023] | 3/6 | 0.4258 | 0.9023 |
+| MSID → MSLD v2.0 | mpox_specificity | atlas vs rand | 9 | +0.035 [-0.019, +0.086] | 7/2 | 0.3008 | 0.9023 |
+| MSLD v2.0 → MSID | balanced_accuracy | factor vs erm | 9 | -0.006 [-0.023, +0.015] | 3/6 | 0.4961 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | factor_notone vs erm | 9 | -0.006 [-0.032, +0.020] | 4/5 | 0.8203 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | atlas vs erm | 9 | -0.010 [-0.029, +0.010] | 2/7 | 0.3008 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | hod vs erm | 9 | -0.013 [-0.040, +0.017] | 3/6 | 0.4961 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | rand vs erm | 9 | -0.005 [-0.020, +0.012] | 3/6 | 0.3594 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | factor vs atlas | 9 | +0.004 [-0.008, +0.017] | 6/3 | 0.5703 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | factor vs hod | 9 | +0.007 [-0.006, +0.020] | 7/2 | 0.3008 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | factor vs factor_notone | 9 | -0.000 [-0.014, +0.015] | 4/5 | 0.7344 | 1.0000 |
+| MSLD v2.0 → MSID | balanced_accuracy | atlas vs rand | 9 | -0.005 [-0.020, +0.013] | 2/7 | 0.3594 | 1.0000 |
+| MSLD v2.0 → MSID | auroc | factor vs erm | 9 | -0.017 [-0.027, -0.009] | 1/8 | 0.0078 | 0.0703 |
+| MSLD v2.0 → MSID | auroc | factor_notone vs erm | 9 | -0.015 [-0.023, -0.007] | 2/7 | 0.0195 | 0.1367 |
+| MSLD v2.0 → MSID | auroc | atlas vs erm | 9 | -0.009 [-0.020, +0.003] | 3/6 | 0.2500 | 1.0000 |
+| MSLD v2.0 → MSID | auroc | hod vs erm | 9 | +0.002 [-0.007, +0.013] | 4/5 | 0.9102 | 1.0000 |
+| MSLD v2.0 → MSID | auroc | rand vs erm | 9 | -0.008 [-0.017, +0.000] | 3/6 | 0.1641 | 0.9844 |
+| MSLD v2.0 → MSID | auroc | factor vs atlas | 9 | -0.009 [-0.022, +0.005] | 3/6 | 0.4258 | 1.0000 |
+| MSLD v2.0 → MSID | auroc | factor vs hod | 9 | -0.020 [-0.027, -0.012] | 1/8 | 0.0078 | 0.0703 |
+| MSLD v2.0 → MSID | auroc | factor vs factor_notone | 9 | -0.002 [-0.008, +0.004] | 4/5 | 0.6523 | 1.0000 |
+| MSLD v2.0 → MSID | auroc | atlas vs rand | 9 | -0.000 [-0.009, +0.008] | 5/4 | 1.0000 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | factor vs erm | 9 | -0.010 [-0.021, +0.001] | 3/5 | 0.2500 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | factor_notone vs erm | 9 | -0.009 [-0.017, -0.001] | 3/6 | 0.1289 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | atlas vs erm | 9 | +0.004 [-0.003, +0.012] | 6/2 | 0.3828 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | hod vs erm | 9 | +0.001 [-0.003, +0.006] | 4/5 | 0.9102 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | rand vs erm | 9 | -0.000 [-0.009, +0.009] | 4/4 | 1.0000 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | factor vs atlas | 9 | -0.014 [-0.023, -0.004] | 2/7 | 0.0742 | 0.6680 |
+| MSLD v2.0 → MSID | mpox_specificity | factor vs hod | 9 | -0.011 [-0.023, -0.001] | 3/6 | 0.1641 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | factor vs factor_notone | 9 | -0.001 [-0.013, +0.012] | 4/5 | 0.8203 | 1.0000 |
+| MSLD v2.0 → MSID | mpox_specificity | atlas vs rand | 9 | +0.004 [-0.003, +0.013] | 5/3 | 0.4609 | 1.0000 |
+# Seen vs unseen negative classes (P3, mean ± SD over backbones and seeds)
+
+## MSID → MSLD v2.0 (classes not seen in training: cowpox, hfmd)
+
+| method | runs | sens. | closed-set bal. acc. | unseen-class spec. | disease spec. | healthy spec. | AUROC vs disease | AUROC vs healthy | disease-factor AUROC | mpox-factor AUROC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| erm | 9 | 0.931 ± 0.029 | 0.744 ± 0.048 | 0.391 ± 0.110 | 0.392 ± 0.102 | 0.755 ± 0.140 | 0.775 ± 0.044 | 0.946 ± 0.035 | – | – |
+| rand | 9 | 0.872 ± 0.055 | 0.737 ± 0.043 | 0.631 ± 0.083 | 0.568 ± 0.095 | 0.779 ± 0.131 | 0.808 ± 0.035 | 0.913 ± 0.046 | – | – |
+| atlas | 9 | 0.846 ± 0.079 | 0.730 ± 0.035 | 0.690 ± 0.108 | 0.605 ± 0.120 | 0.810 ± 0.135 | 0.817 ± 0.036 | 0.927 ± 0.027 | – | – |
+| hod | 9 | 0.862 ± 0.047 | 0.769 ± 0.040 | 0.688 ± 0.065 | 0.634 ± 0.086 | 0.842 ± 0.107 | 0.835 ± 0.026 | 0.943 ± 0.023 | – | – |
+| factor_notone | 9 | 0.889 ± 0.085 | 0.744 ± 0.047 | 0.645 ± 0.111 | 0.572 ± 0.125 | 0.788 ± 0.163 | 0.825 ± 0.023 | 0.950 ± 0.024 | 0.929 ± 0.039 | 0.839 ± 0.021 |
+| factor | 9 | 0.889 ± 0.087 | 0.735 ± 0.039 | 0.621 ± 0.114 | 0.545 ± 0.125 | 0.792 ± 0.132 | 0.815 ± 0.023 | 0.942 ± 0.025 | 0.926 ± 0.043 | 0.827 ± 0.023 |
+
+## MSLD v2.0 → MSID (classes not seen in training: none)
+
+| method | runs | sens. | closed-set bal. acc. | unseen-class spec. | disease spec. | healthy spec. | AUROC vs disease | AUROC vs healthy | disease-factor AUROC | mpox-factor AUROC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| erm | 9 | 0.738 ± 0.060 | 0.852 ± 0.034 | – | 0.927 ± 0.025 | 0.993 ± 0.005 | 0.910 ± 0.033 | 0.961 ± 0.010 | – | – |
+| rand | 9 | 0.728 ± 0.035 | 0.847 ± 0.018 | – | 0.921 ± 0.035 | 0.997 ± 0.003 | 0.903 ± 0.023 | 0.952 ± 0.011 | – | – |
+| atlas | 9 | 0.714 ± 0.034 | 0.842 ± 0.018 | – | 0.931 ± 0.028 | 0.997 ± 0.004 | 0.904 ± 0.023 | 0.951 ± 0.014 | – | – |
+| hod | 9 | 0.710 ± 0.041 | 0.839 ± 0.021 | – | 0.926 ± 0.019 | 0.996 ± 0.004 | 0.906 ± 0.019 | 0.968 ± 0.011 | – | – |
+| factor_notone | 9 | 0.735 ± 0.072 | 0.846 ± 0.035 | – | 0.900 ± 0.020 | 0.997 ± 0.003 | 0.894 ± 0.023 | 0.947 ± 0.016 | 0.909 ± 0.059 | 0.895 ± 0.023 |
+| factor | 9 | 0.736 ± 0.044 | 0.846 ± 0.022 | – | 0.903 ± 0.043 | 0.993 ± 0.011 | 0.894 ± 0.031 | 0.943 ± 0.019 | 0.889 ± 0.109 | 0.901 ± 0.021 |
+
+# External test on MCSI (pre-registered clean set: 293 images, {'acne': 100, 'chickenpox': 94, 'healthy': 93, 'mpox': 6}); mean ± SD over backbones and seeds
+
+## Trained on MSID (mpox images scored: [6])
+
+| method | runs | balanced_accuracy | sens | spec | auroc | auroc_vs_healthy | auroc_vs_disease | shortcut_gap | called_acne | called_chickenpox | called_healthy | sens_dark | sens_light | spec_dark | spec_light | factor_disease_auroc | factor_mpox_auroc |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| erm | 9 | 0.698 ± 0.074 | 1.000 ± 0.000 | 0.395 ± 0.148 | 0.871 ± 0.077 | 0.961 ± 0.061 | 0.827 ± 0.088 | 0.134 ± 0.049 | 0.727 ± 0.163 | 0.697 ± 0.109 | 0.380 ± 0.207 | – | 1.000 ± 0.000 | 0.330 ± 0.155 | 0.425 ± 0.150 | – | – |
+| rand | 9 | 0.816 ± 0.060 | 0.963 ± 0.073 | 0.669 ± 0.111 | 0.910 ± 0.052 | 0.968 ± 0.044 | 0.883 ± 0.059 | 0.085 ± 0.034 | 0.337 ± 0.085 | 0.446 ± 0.127 | 0.210 ± 0.159 | – | 0.956 ± 0.088 | 0.584 ± 0.108 | 0.642 ± 0.134 | – | – |
+| atlas | 9 | 0.835 ± 0.048 | 1.000 ± 0.000 | 0.671 ± 0.096 | 0.900 ± 0.062 | 0.977 ± 0.036 | 0.864 ± 0.076 | 0.113 ± 0.046 | 0.346 ± 0.103 | 0.454 ± 0.113 | 0.186 ± 0.116 | – | 1.000 ± 0.000 | 0.591 ± 0.100 | 0.653 ± 0.107 | – | – |
+| hod | 9 | 0.865 ± 0.031 | 1.000 ± 0.000 | 0.730 ± 0.062 | 0.931 ± 0.029 | 0.991 ± 0.011 | 0.902 ± 0.038 | 0.088 ± 0.029 | 0.340 ± 0.100 | 0.365 ± 0.069 | 0.098 ± 0.042 | – | 1.000 ± 0.000 | 0.641 ± 0.097 | 0.727 ± 0.062 | – | – |
+| factor_notone | 9 | 0.795 ± 0.056 | 0.963 ± 0.111 | 0.628 ± 0.146 | 0.896 ± 0.035 | 0.981 ± 0.022 | 0.856 ± 0.044 | 0.125 ± 0.033 | 0.402 ± 0.144 | 0.461 ± 0.149 | 0.251 ± 0.167 | – | 0.956 ± 0.133 | 0.517 ± 0.178 | 0.622 ± 0.156 | 0.924 ± 0.072 | 0.867 ± 0.050 |
+| factor | 9 | 0.773 ± 0.087 | 0.926 ± 0.121 | 0.621 ± 0.127 | 0.880 ± 0.070 | 0.957 ± 0.069 | 0.843 ± 0.075 | 0.114 ± 0.044 | 0.374 ± 0.126 | 0.479 ± 0.132 | 0.284 ± 0.188 | – | 0.911 ± 0.145 | 0.517 ± 0.120 | 0.593 ± 0.161 | 0.936 ± 0.044 | 0.869 ± 0.071 |
+
+## Trained on MSLD v2.0 (mpox images scored: [6])
+
+| method | runs | balanced_accuracy | sens | spec | auroc | auroc_vs_healthy | auroc_vs_disease | shortcut_gap | called_acne | called_chickenpox | called_healthy | sens_dark | sens_light | spec_dark | spec_light | factor_disease_auroc | factor_mpox_auroc |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| erm | 9 | 0.847 ± 0.057 | 0.926 ± 0.121 | 0.768 ± 0.065 | 0.916 ± 0.042 | 0.962 ± 0.049 | 0.894 ± 0.044 | 0.068 ± 0.037 | 0.271 ± 0.088 | 0.279 ± 0.071 | 0.141 ± 0.071 | – | 0.933 ± 0.100 | 0.621 ± 0.117 | 0.800 ± 0.066 | – | – |
+| rand | 9 | 0.837 ± 0.067 | 0.852 ± 0.155 | 0.823 ± 0.056 | 0.923 ± 0.033 | 0.962 ± 0.026 | 0.904 ± 0.037 | 0.058 ± 0.020 | 0.200 ± 0.058 | 0.212 ± 0.047 | 0.117 ± 0.069 | – | 0.889 ± 0.145 | 0.715 ± 0.074 | 0.846 ± 0.076 | – | – |
+| atlas | 9 | 0.796 ± 0.105 | 0.759 ± 0.237 | 0.834 ± 0.050 | 0.911 ± 0.060 | 0.939 ± 0.077 | 0.897 ± 0.054 | 0.041 ± 0.037 | 0.184 ± 0.061 | 0.199 ± 0.043 | 0.115 ± 0.068 | – | 0.756 ± 0.260 | 0.705 ± 0.086 | 0.872 ± 0.051 | – | – |
+| hod | 9 | 0.873 ± 0.106 | 0.889 ± 0.220 | 0.857 ± 0.051 | 0.931 ± 0.056 | 0.960 ± 0.071 | 0.918 ± 0.049 | 0.042 ± 0.025 | 0.163 ± 0.069 | 0.193 ± 0.068 | 0.072 ± 0.049 | – | 0.889 ± 0.226 | 0.742 ± 0.082 | 0.890 ± 0.056 | – | – |
+| factor_notone | 9 | 0.826 ± 0.064 | 0.852 ± 0.155 | 0.801 ± 0.060 | 0.908 ± 0.044 | 0.953 ± 0.043 | 0.886 ± 0.047 | 0.066 ± 0.022 | 0.219 ± 0.060 | 0.230 ± 0.047 | 0.147 ± 0.094 | – | 0.867 ± 0.200 | 0.636 ± 0.110 | 0.844 ± 0.070 | 0.946 ± 0.048 | 0.911 ± 0.050 |
+| factor | 9 | 0.849 ± 0.067 | 0.907 ± 0.147 | 0.791 ± 0.082 | 0.905 ± 0.039 | 0.967 ± 0.025 | 0.875 ± 0.052 | 0.092 ± 0.048 | 0.218 ± 0.091 | 0.247 ± 0.069 | 0.160 ± 0.100 | – | 0.911 ± 0.145 | 0.625 ± 0.102 | 0.826 ± 0.102 | 0.924 ± 0.086 | 0.929 ± 0.040 |
+
+# External test on MCSI (direction-specific clean sets (amendment 1; counts below are before removing training-set copies): 399 images, {'mpox': 100, 'chickenpox': 100, 'acne': 100, 'healthy': 99}); mean ± SD over backbones and seeds
+
+## Trained on MSID (mpox images scored: [34])
+
+| method | runs | balanced_accuracy | sens | spec | auroc | auroc_vs_healthy | auroc_vs_disease | shortcut_gap | called_acne | called_chickenpox | called_healthy | sens_dark | sens_light | spec_dark | spec_light | factor_disease_auroc | factor_mpox_auroc |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| erm | 9 | 0.682 ± 0.070 | 0.974 ± 0.023 | 0.391 ± 0.146 | 0.865 ± 0.041 | 0.952 ± 0.042 | 0.825 ± 0.042 | 0.127 ± 0.018 | 0.727 ± 0.163 | 0.704 ± 0.106 | 0.380 ± 0.207 | 1.000 ± 0.000 | 0.951 ± 0.042 | 0.320 ± 0.150 | 0.426 ± 0.149 | – | – |
+| rand | 9 | 0.804 ± 0.037 | 0.944 ± 0.054 | 0.663 ± 0.110 | 0.897 ± 0.018 | 0.960 ± 0.023 | 0.867 ± 0.019 | 0.094 ± 0.018 | 0.337 ± 0.085 | 0.454 ± 0.125 | 0.210 ± 0.159 | 0.978 ± 0.067 | 0.938 ± 0.054 | 0.569 ± 0.103 | 0.647 ± 0.134 | – | – |
+| atlas | 9 | 0.798 ± 0.038 | 0.931 ± 0.036 | 0.665 ± 0.096 | 0.886 ± 0.028 | 0.955 ± 0.022 | 0.854 ± 0.033 | 0.100 ± 0.018 | 0.346 ± 0.103 | 0.463 ± 0.113 | 0.186 ± 0.116 | 0.989 ± 0.033 | 0.958 ± 0.054 | 0.574 ± 0.097 | 0.656 ± 0.107 | – | – |
+| hod | 9 | 0.816 ± 0.032 | 0.908 ± 0.066 | 0.724 ± 0.060 | 0.904 ± 0.022 | 0.974 ± 0.015 | 0.871 ± 0.026 | 0.103 ± 0.017 | 0.340 ± 0.100 | 0.377 ± 0.063 | 0.098 ± 0.042 | 0.967 ± 0.050 | 0.896 ± 0.062 | 0.623 ± 0.094 | 0.731 ± 0.060 | – | – |
+| factor_notone | 9 | 0.781 ± 0.052 | 0.941 ± 0.051 | 0.622 ± 0.144 | 0.888 ± 0.027 | 0.966 ± 0.012 | 0.851 ± 0.036 | 0.115 ± 0.030 | 0.402 ± 0.144 | 0.473 ± 0.145 | 0.251 ± 0.167 | 0.978 ± 0.044 | 0.931 ± 0.079 | 0.502 ± 0.173 | 0.627 ± 0.155 | 0.922 ± 0.070 | 0.857 ± 0.038 |
+| factor | 9 | 0.775 ± 0.041 | 0.935 ± 0.053 | 0.616 ± 0.125 | 0.885 ± 0.035 | 0.961 ± 0.025 | 0.849 ± 0.045 | 0.112 ± 0.041 | 0.374 ± 0.126 | 0.486 ± 0.127 | 0.284 ± 0.188 | 0.989 ± 0.033 | 0.917 ± 0.077 | 0.502 ± 0.116 | 0.598 ± 0.159 | 0.933 ± 0.043 | 0.862 ± 0.040 |
+
+## Trained on MSLD v2.0 (mpox images scored: [38])
+
+| method | runs | balanced_accuracy | sens | spec | auroc | auroc_vs_healthy | auroc_vs_disease | shortcut_gap | called_acne | called_chickenpox | called_healthy | sens_dark | sens_light | spec_dark | spec_light | factor_disease_auroc | factor_mpox_auroc |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| erm | 9 | 0.825 ± 0.035 | 0.877 ± 0.059 | 0.772 ± 0.064 | 0.899 ± 0.028 | 0.933 ± 0.025 | 0.882 ± 0.032 | 0.051 ± 0.025 | 0.271 ± 0.088 | 0.279 ± 0.071 | 0.134 ± 0.068 | 0.978 ± 0.067 | 0.758 ± 0.090 | 0.621 ± 0.117 | 0.807 ± 0.064 | – | – |
+| rand | 9 | 0.843 ± 0.016 | 0.860 ± 0.047 | 0.826 ± 0.055 | 0.916 ± 0.009 | 0.937 ± 0.009 | 0.906 ± 0.011 | 0.031 ± 0.009 | 0.200 ± 0.058 | 0.212 ± 0.047 | 0.111 ± 0.065 | 0.989 ± 0.033 | 0.732 ± 0.089 | 0.715 ± 0.074 | 0.851 ± 0.074 | – | – |
+| atlas | 9 | 0.836 ± 0.030 | 0.836 ± 0.073 | 0.836 ± 0.049 | 0.910 ± 0.017 | 0.925 ± 0.026 | 0.902 ± 0.012 | 0.023 ± 0.016 | 0.184 ± 0.061 | 0.199 ± 0.043 | 0.109 ± 0.064 | 0.989 ± 0.033 | 0.673 ± 0.153 | 0.705 ± 0.086 | 0.876 ± 0.049 | – | – |
+| hod | 9 | 0.851 ± 0.042 | 0.842 ± 0.054 | 0.859 ± 0.050 | 0.919 ± 0.023 | 0.940 ± 0.027 | 0.908 ± 0.022 | 0.032 ± 0.014 | 0.163 ± 0.069 | 0.193 ± 0.068 | 0.068 ± 0.047 | 1.000 ± 0.000 | 0.693 ± 0.087 | 0.742 ± 0.082 | 0.893 ± 0.055 | – | – |
+| factor_notone | 9 | 0.823 ± 0.029 | 0.842 ± 0.049 | 0.804 ± 0.059 | 0.890 ± 0.023 | 0.919 ± 0.021 | 0.875 ± 0.029 | 0.044 ± 0.029 | 0.219 ± 0.060 | 0.230 ± 0.047 | 0.139 ± 0.089 | 1.000 ± 0.000 | 0.686 ± 0.125 | 0.636 ± 0.110 | 0.849 ± 0.068 | 0.929 ± 0.071 | 0.908 ± 0.018 |
+| factor | 9 | 0.824 ± 0.036 | 0.854 ± 0.066 | 0.795 ± 0.081 | 0.867 ± 0.048 | 0.908 ± 0.038 | 0.846 ± 0.056 | 0.062 ± 0.034 | 0.218 ± 0.091 | 0.247 ± 0.069 | 0.152 ± 0.095 | 0.989 ± 0.033 | 0.706 ± 0.138 | 0.625 ± 0.102 | 0.832 ± 0.099 | 0.899 ± 0.117 | 0.904 ± 0.020 |
+
+## Paired comparisons per direction (95% bootstrap CI of the mean difference; Holm-adjusted within direction and metric)
+
+| direction | metric | comparison | pairs | mean diff [95% CI] | wins/losses | p | p (Holm) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| msid->mcsi | balanced_accuracy | rand vs erm | 9 | +0.118 [+0.054, +0.185] | 8/1 | 0.0195 | 0.0391 |
+| msid->mcsi | balanced_accuracy | atlas vs erm | 9 | +0.138 [+0.096, +0.184] | 9/0 | 0.0039 | 0.0195 |
+| msid->mcsi | balanced_accuracy | hod vs erm | 9 | +0.167 [+0.121, +0.218] | 9/0 | 0.0039 | 0.0195 |
+| msid->mcsi | balanced_accuracy | factor_notone vs erm | 9 | +0.098 [+0.045, +0.153] | 9/0 | 0.0039 | 0.0195 |
+| msid->mcsi | balanced_accuracy | factor vs erm | 9 | +0.076 [+0.026, +0.122] | 7/2 | 0.0391 | 0.0391 |
+| msid->mcsi | called_acne | rand vs erm | 9 | -0.390 [-0.518, -0.277] | 0/9 | 0.0039 | 0.0195 |
+| msid->mcsi | called_acne | atlas vs erm | 9 | -0.381 [-0.483, -0.287] | 0/9 | 0.0039 | 0.0195 |
+| msid->mcsi | called_acne | hod vs erm | 9 | -0.387 [-0.477, -0.307] | 0/9 | 0.0039 | 0.0195 |
+| msid->mcsi | called_acne | factor_notone vs erm | 9 | -0.324 [-0.444, -0.203] | 0/9 | 0.0039 | 0.0195 |
+| msid->mcsi | called_acne | factor vs erm | 9 | -0.352 [-0.443, -0.258] | 0/9 | 0.0039 | 0.0195 |
+| msid->mcsi | shortcut_gap | rand vs erm | 9 | -0.049 [-0.078, -0.023] | 0/9 | 0.0039 | 0.0195 |
+| msid->mcsi | shortcut_gap | atlas vs erm | 9 | -0.021 [-0.066, +0.021] | 4/5 | 0.5703 | 1.0000 |
+| msid->mcsi | shortcut_gap | hod vs erm | 9 | -0.045 [-0.078, -0.010] | 2/7 | 0.0273 | 0.1094 |
+| msid->mcsi | shortcut_gap | factor_notone vs erm | 9 | -0.009 [-0.049, +0.031] | 3/6 | 0.5703 | 1.0000 |
+| msid->mcsi | shortcut_gap | factor vs erm | 9 | -0.020 [-0.064, +0.026] | 3/6 | 0.4961 | 1.0000 |
+| msid->mcsi | auroc | rand vs erm | 9 | +0.040 [-0.000, +0.083] | 6/3 | 0.2500 | 0.8125 |
+| msid->mcsi | auroc | atlas vs erm | 9 | +0.030 [-0.012, +0.070] | 6/3 | 0.3008 | 0.8125 |
+| msid->mcsi | auroc | hod vs erm | 9 | +0.060 [+0.009, +0.114] | 7/2 | 0.0547 | 0.2734 |
+| msid->mcsi | auroc | factor_notone vs erm | 9 | +0.026 [-0.023, +0.070] | 7/2 | 0.2031 | 0.8125 |
+| msid->mcsi | auroc | factor vs erm | 9 | +0.009 [-0.037, +0.053] | 5/4 | 0.8203 | 0.8203 |
+| msld_v2->mcsi | balanced_accuracy | rand vs erm | 9 | -0.010 [-0.047, +0.028] | 4/5 | 0.4258 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | atlas vs erm | 9 | -0.051 [-0.126, +0.020] | 3/6 | 0.3594 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | hod vs erm | 9 | +0.026 [-0.052, +0.095] | 6/2 | 0.5469 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | factor_notone vs erm | 9 | -0.021 [-0.075, +0.032] | 4/5 | 0.5703 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | factor vs erm | 9 | +0.002 [-0.063, +0.065] | 5/4 | 1.0000 | 1.0000 |
+| msld_v2->mcsi | called_acne | rand vs erm | 9 | -0.071 [-0.123, -0.013] | 2/7 | 0.0547 | 0.1641 |
+| msld_v2->mcsi | called_acne | atlas vs erm | 9 | -0.087 [-0.117, -0.058] | 0/9 | 0.0039 | 0.0195 |
+| msld_v2->mcsi | called_acne | hod vs erm | 9 | -0.108 [-0.156, -0.068] | 0/9 | 0.0039 | 0.0195 |
+| msld_v2->mcsi | called_acne | factor_notone vs erm | 9 | -0.052 [-0.127, +0.016] | 4/5 | 0.3594 | 0.5000 |
+| msld_v2->mcsi | called_acne | factor vs erm | 9 | -0.053 [-0.127, +0.023] | 3/6 | 0.2500 | 0.5000 |
+| msld_v2->mcsi | shortcut_gap | rand vs erm | 9 | -0.010 [-0.035, +0.010] | 5/4 | 1.0000 | 1.0000 |
+| msld_v2->mcsi | shortcut_gap | atlas vs erm | 9 | -0.027 [-0.055, +0.000] | 3/6 | 0.1641 | 0.8203 |
+| msld_v2->mcsi | shortcut_gap | hod vs erm | 9 | -0.026 [-0.054, -0.000] | 3/6 | 0.2031 | 0.8203 |
+| msld_v2->mcsi | shortcut_gap | factor_notone vs erm | 9 | -0.002 [-0.035, +0.031] | 5/4 | 1.0000 | 1.0000 |
+| msld_v2->mcsi | shortcut_gap | factor vs erm | 9 | +0.023 [-0.017, +0.057] | 6/3 | 0.3008 | 0.9023 |
+| msld_v2->mcsi | auroc | rand vs erm | 9 | +0.006 [-0.016, +0.030] | 4/5 | 0.7344 | 1.0000 |
+| msld_v2->mcsi | auroc | atlas vs erm | 9 | -0.006 [-0.052, +0.033] | 5/4 | 0.9102 | 1.0000 |
+| msld_v2->mcsi | auroc | hod vs erm | 9 | +0.015 [-0.023, +0.051] | 5/4 | 0.4961 | 1.0000 |
+| msld_v2->mcsi | auroc | factor_notone vs erm | 9 | -0.009 [-0.039, +0.020] | 5/4 | 1.0000 | 1.0000 |
+| msld_v2->mcsi | auroc | factor vs erm | 9 | -0.012 [-0.052, +0.031] | 3/6 | 0.4961 | 1.0000 |
+## Paired comparisons per direction (95% bootstrap CI of the mean difference; Holm-adjusted within direction and metric)
+
+| direction | metric | comparison | pairs | mean diff [95% CI] | wins/losses | p | p (Holm) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| msid->mcsi | balanced_accuracy | factor vs atlas | 9 | -0.062 [-0.099, -0.023] | 2/7 | 0.0391 | 0.1172 |
+| msid->mcsi | balanced_accuracy | factor vs hod | 9 | -0.092 [-0.151, -0.035] | 1/8 | 0.0195 | 0.0781 |
+| msid->mcsi | balanced_accuracy | factor vs factor_notone | 9 | -0.022 [-0.082, +0.040] | 4/5 | 0.3594 | 0.7188 |
+| msid->mcsi | balanced_accuracy | factor vs rand | 9 | -0.043 [-0.109, +0.025] | 4/5 | 0.4258 | 0.7188 |
+| msid->mcsi | auroc | factor vs atlas | 9 | -0.021 [-0.036, -0.008] | 1/8 | 0.0117 | 0.0469 |
+| msid->mcsi | auroc | factor vs hod | 9 | -0.051 [-0.099, -0.009] | 2/7 | 0.0742 | 0.2227 |
+| msid->mcsi | auroc | factor vs factor_notone | 9 | -0.017 [-0.050, +0.015] | 4/5 | 0.6523 | 0.6523 |
+| msid->mcsi | auroc | factor vs rand | 9 | -0.031 [-0.062, +0.005] | 2/7 | 0.1289 | 0.2578 |
+| msid->mcsi | called_acne | factor vs atlas | 9 | +0.029 [-0.036, +0.096] | 4/5 | 0.4258 | 1.0000 |
+| msid->mcsi | called_acne | factor vs hod | 9 | +0.034 [-0.036, +0.101] | 6/2 | 0.5469 | 1.0000 |
+| msid->mcsi | called_acne | factor vs factor_notone | 9 | -0.028 [-0.127, +0.077] | 3/5 | 0.6406 | 1.0000 |
+| msid->mcsi | called_acne | factor vs rand | 9 | +0.038 [-0.059, +0.144] | 5/4 | 0.7344 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | factor vs atlas | 9 | +0.053 [-0.012, +0.127] | 5/4 | 0.3594 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | factor vs hod | 9 | -0.023 [-0.094, +0.046] | 3/6 | 0.4961 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | factor vs factor_notone | 9 | +0.023 [-0.033, +0.083] | 4/5 | 0.4961 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | factor vs rand | 9 | +0.012 [-0.051, +0.072] | 4/5 | 0.9102 | 1.0000 |
+| msld_v2->mcsi | auroc | factor vs atlas | 9 | -0.006 [-0.058, +0.049] | 4/5 | 0.8203 | 1.0000 |
+| msld_v2->mcsi | auroc | factor vs hod | 9 | -0.027 [-0.069, +0.021] | 3/6 | 0.3008 | 1.0000 |
+| msld_v2->mcsi | auroc | factor vs factor_notone | 9 | -0.003 [-0.052, +0.042] | 5/4 | 0.9102 | 1.0000 |
+| msld_v2->mcsi | auroc | factor vs rand | 9 | -0.018 [-0.056, +0.018] | 4/5 | 0.4258 | 1.0000 |
+| msld_v2->mcsi | called_acne | factor vs atlas | 9 | +0.033 [-0.021, +0.091] | 4/4 | 0.5469 | 1.0000 |
+| msld_v2->mcsi | called_acne | factor vs hod | 9 | +0.054 [-0.008, +0.118] | 5/4 | 0.2500 | 1.0000 |
+| msld_v2->mcsi | called_acne | factor vs factor_notone | 9 | -0.001 [-0.043, +0.044] | 3/6 | 1.0000 | 1.0000 |
+| msld_v2->mcsi | called_acne | factor vs rand | 9 | +0.018 [-0.026, +0.071] | 4/4 | 0.9453 | 1.0000 |
+## Paired comparisons per direction (95% bootstrap CI of the mean difference; Holm-adjusted within direction and metric)
+
+| direction | metric | comparison | pairs | mean diff [95% CI] | wins/losses | p | p (Holm) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| msid->mcsi | balanced_accuracy | rand vs erm | 9 | +0.121 [+0.072, +0.172] | 8/1 | 0.0078 | 0.0195 |
+| msid->mcsi | balanced_accuracy | atlas vs erm | 9 | +0.116 [+0.080, +0.156] | 9/0 | 0.0039 | 0.0195 |
+| msid->mcsi | balanced_accuracy | hod vs erm | 9 | +0.134 [+0.083, +0.185] | 9/0 | 0.0039 | 0.0195 |
+| msid->mcsi | balanced_accuracy | factor_notone vs erm | 9 | +0.099 [+0.052, +0.146] | 9/0 | 0.0039 | 0.0195 |
+| msid->mcsi | balanced_accuracy | factor vs erm | 9 | +0.093 [+0.050, +0.128] | 8/1 | 0.0078 | 0.0195 |
+| msid->mcsi | auroc | rand vs erm | 9 | +0.031 [+0.006, +0.064] | 6/3 | 0.0547 | 0.2188 |
+| msid->mcsi | auroc | atlas vs erm | 9 | +0.021 [+0.004, +0.040] | 6/3 | 0.1289 | 0.3867 |
+| msid->mcsi | auroc | hod vs erm | 9 | +0.038 [+0.019, +0.063] | 9/0 | 0.0039 | 0.0195 |
+| msid->mcsi | auroc | factor_notone vs erm | 9 | +0.023 [-0.008, +0.055] | 6/3 | 0.2500 | 0.5000 |
+| msid->mcsi | auroc | factor vs erm | 9 | +0.020 [-0.008, +0.049] | 6/3 | 0.2500 | 0.5000 |
+| msid->mcsi | shortcut_gap | rand vs erm | 9 | -0.033 [-0.046, -0.022] | 0/9 | 0.0039 | 0.0195 |
+| msid->mcsi | shortcut_gap | atlas vs erm | 9 | -0.027 [-0.045, -0.009] | 2/7 | 0.0273 | 0.0820 |
+| msid->mcsi | shortcut_gap | hod vs erm | 9 | -0.024 [-0.036, -0.012] | 1/8 | 0.0117 | 0.0469 |
+| msid->mcsi | shortcut_gap | factor_notone vs erm | 9 | -0.012 [-0.039, +0.015] | 4/5 | 0.5703 | 0.8516 |
+| msid->mcsi | shortcut_gap | factor vs erm | 9 | -0.015 [-0.044, +0.016] | 2/7 | 0.4258 | 0.8516 |
+| msld_v2->mcsi | balanced_accuracy | rand vs erm | 9 | +0.018 [+0.001, +0.035] | 7/2 | 0.0977 | 0.4883 |
+| msld_v2->mcsi | balanced_accuracy | atlas vs erm | 9 | +0.011 [-0.017, +0.041] | 5/4 | 0.5703 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | hod vs erm | 9 | +0.026 [-0.006, +0.057] | 6/3 | 0.2031 | 0.8125 |
+| msld_v2->mcsi | balanced_accuracy | factor_notone vs erm | 9 | -0.002 [-0.024, +0.023] | 5/4 | 0.7344 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | factor vs erm | 9 | -0.000 [-0.034, +0.029] | 6/3 | 0.9102 | 1.0000 |
+| msld_v2->mcsi | auroc | rand vs erm | 9 | +0.017 [+0.006, +0.030] | 7/2 | 0.0391 | 0.1953 |
+| msld_v2->mcsi | auroc | atlas vs erm | 9 | +0.011 [-0.010, +0.033] | 5/4 | 0.5703 | 0.5703 |
+| msld_v2->mcsi | auroc | hod vs erm | 9 | +0.020 [+0.001, +0.040] | 6/3 | 0.1289 | 0.3867 |
+| msld_v2->mcsi | auroc | factor_notone vs erm | 9 | -0.009 [-0.021, +0.006] | 1/8 | 0.1289 | 0.3867 |
+| msld_v2->mcsi | auroc | factor vs erm | 9 | -0.032 [-0.070, -0.007] | 3/6 | 0.0547 | 0.2188 |
+| msld_v2->mcsi | shortcut_gap | rand vs erm | 9 | -0.021 [-0.034, -0.008] | 2/7 | 0.0195 | 0.0977 |
+| msld_v2->mcsi | shortcut_gap | atlas vs erm | 9 | -0.028 [-0.047, -0.010] | 3/6 | 0.0547 | 0.2188 |
+| msld_v2->mcsi | shortcut_gap | hod vs erm | 9 | -0.019 [-0.038, -0.002] | 4/5 | 0.1641 | 0.4922 |
+| msld_v2->mcsi | shortcut_gap | factor_notone vs erm | 9 | -0.007 [-0.038, +0.022] | 4/5 | 0.7344 | 1.0000 |
+| msld_v2->mcsi | shortcut_gap | factor vs erm | 9 | +0.011 [-0.017, +0.038] | 4/5 | 0.5703 | 1.0000 |
+== [17:11:36 UTC, +326 min] package
+== [17:11:37 UTC, +326 min] DONE. Key files in /kaggle/working/key_results_external

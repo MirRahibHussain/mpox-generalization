@@ -1,0 +1,44 @@
+## Paired comparisons per direction (95% bootstrap CI of the mean difference; Holm-adjusted within direction and metric)
+
+| direction | metric | comparison | pairs | mean diff [95% CI] | wins/losses | p | p (Holm) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| msid->mcsi | balanced_accuracy | rand vs erm | 9 | +0.118 [+0.054, +0.185] | 8/1 | 0.0195 | 0.0391 |
+| msid->mcsi | balanced_accuracy | atlas vs erm | 9 | +0.138 [+0.096, +0.184] | 9/0 | 0.0039 | 0.0195 |
+| msid->mcsi | balanced_accuracy | hod vs erm | 9 | +0.167 [+0.121, +0.218] | 9/0 | 0.0039 | 0.0195 |
+| msid->mcsi | balanced_accuracy | factor_notone vs erm | 9 | +0.098 [+0.045, +0.153] | 9/0 | 0.0039 | 0.0195 |
+| msid->mcsi | balanced_accuracy | factor vs erm | 9 | +0.076 [+0.026, +0.122] | 7/2 | 0.0391 | 0.0391 |
+| msid->mcsi | called_acne | rand vs erm | 9 | -0.390 [-0.518, -0.277] | 0/9 | 0.0039 | 0.0195 |
+| msid->mcsi | called_acne | atlas vs erm | 9 | -0.381 [-0.483, -0.287] | 0/9 | 0.0039 | 0.0195 |
+| msid->mcsi | called_acne | hod vs erm | 9 | -0.387 [-0.477, -0.307] | 0/9 | 0.0039 | 0.0195 |
+| msid->mcsi | called_acne | factor_notone vs erm | 9 | -0.324 [-0.444, -0.203] | 0/9 | 0.0039 | 0.0195 |
+| msid->mcsi | called_acne | factor vs erm | 9 | -0.352 [-0.443, -0.258] | 0/9 | 0.0039 | 0.0195 |
+| msid->mcsi | shortcut_gap | rand vs erm | 9 | -0.049 [-0.078, -0.023] | 0/9 | 0.0039 | 0.0195 |
+| msid->mcsi | shortcut_gap | atlas vs erm | 9 | -0.021 [-0.066, +0.021] | 4/5 | 0.5703 | 1.0000 |
+| msid->mcsi | shortcut_gap | hod vs erm | 9 | -0.045 [-0.078, -0.010] | 2/7 | 0.0273 | 0.1094 |
+| msid->mcsi | shortcut_gap | factor_notone vs erm | 9 | -0.009 [-0.049, +0.031] | 3/6 | 0.5703 | 1.0000 |
+| msid->mcsi | shortcut_gap | factor vs erm | 9 | -0.020 [-0.064, +0.026] | 3/6 | 0.4961 | 1.0000 |
+| msid->mcsi | auroc | rand vs erm | 9 | +0.040 [-0.000, +0.083] | 6/3 | 0.2500 | 0.8125 |
+| msid->mcsi | auroc | atlas vs erm | 9 | +0.030 [-0.012, +0.070] | 6/3 | 0.3008 | 0.8125 |
+| msid->mcsi | auroc | hod vs erm | 9 | +0.060 [+0.009, +0.114] | 7/2 | 0.0547 | 0.2734 |
+| msid->mcsi | auroc | factor_notone vs erm | 9 | +0.026 [-0.023, +0.070] | 7/2 | 0.2031 | 0.8125 |
+| msid->mcsi | auroc | factor vs erm | 9 | +0.009 [-0.037, +0.053] | 5/4 | 0.8203 | 0.8203 |
+| msld_v2->mcsi | balanced_accuracy | rand vs erm | 9 | -0.010 [-0.047, +0.028] | 4/5 | 0.4258 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | atlas vs erm | 9 | -0.051 [-0.126, +0.020] | 3/6 | 0.3594 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | hod vs erm | 9 | +0.026 [-0.052, +0.095] | 6/2 | 0.5469 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | factor_notone vs erm | 9 | -0.021 [-0.075, +0.032] | 4/5 | 0.5703 | 1.0000 |
+| msld_v2->mcsi | balanced_accuracy | factor vs erm | 9 | +0.002 [-0.063, +0.065] | 5/4 | 1.0000 | 1.0000 |
+| msld_v2->mcsi | called_acne | rand vs erm | 9 | -0.071 [-0.123, -0.013] | 2/7 | 0.0547 | 0.1641 |
+| msld_v2->mcsi | called_acne | atlas vs erm | 9 | -0.087 [-0.117, -0.058] | 0/9 | 0.0039 | 0.0195 |
+| msld_v2->mcsi | called_acne | hod vs erm | 9 | -0.108 [-0.156, -0.068] | 0/9 | 0.0039 | 0.0195 |
+| msld_v2->mcsi | called_acne | factor_notone vs erm | 9 | -0.052 [-0.127, +0.016] | 4/5 | 0.3594 | 0.5000 |
+| msld_v2->mcsi | called_acne | factor vs erm | 9 | -0.053 [-0.127, +0.023] | 3/6 | 0.2500 | 0.5000 |
+| msld_v2->mcsi | shortcut_gap | rand vs erm | 9 | -0.010 [-0.035, +0.010] | 5/4 | 1.0000 | 1.0000 |
+| msld_v2->mcsi | shortcut_gap | atlas vs erm | 9 | -0.027 [-0.055, +0.000] | 3/6 | 0.1641 | 0.8203 |
+| msld_v2->mcsi | shortcut_gap | hod vs erm | 9 | -0.026 [-0.054, -0.000] | 3/6 | 0.2031 | 0.8203 |
+| msld_v2->mcsi | shortcut_gap | factor_notone vs erm | 9 | -0.002 [-0.035, +0.031] | 5/4 | 1.0000 | 1.0000 |
+| msld_v2->mcsi | shortcut_gap | factor vs erm | 9 | +0.023 [-0.017, +0.057] | 6/3 | 0.3008 | 0.9023 |
+| msld_v2->mcsi | auroc | rand vs erm | 9 | +0.006 [-0.016, +0.030] | 4/5 | 0.7344 | 1.0000 |
+| msld_v2->mcsi | auroc | atlas vs erm | 9 | -0.006 [-0.052, +0.033] | 5/4 | 0.9102 | 1.0000 |
+| msld_v2->mcsi | auroc | hod vs erm | 9 | +0.015 [-0.023, +0.051] | 5/4 | 0.4961 | 1.0000 |
+| msld_v2->mcsi | auroc | factor_notone vs erm | 9 | -0.009 [-0.039, +0.020] | 5/4 | 1.0000 | 1.0000 |
+| msld_v2->mcsi | auroc | factor vs erm | 9 | -0.012 [-0.052, +0.031] | 3/6 | 0.4961 | 1.0000 |

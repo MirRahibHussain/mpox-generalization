@@ -1,0 +1,10 @@
+Comparison,pairs,mean diff,wins,Wilcoxon p
+FACTOR (proposed) vs ERM (standard fine-tuning),18,+0.024,13,0.0665
+FACTOR (proposed) vs Random-negative control,18,+0.005,9,0.9323
+"FACTOR (proposed) vs Atlas negatives, flat head",18,+0.003,10,0.5798
+FACTOR (proposed) vs HOD (Roy et al. 2022),18,-0.011,10,0.3038
+FACTOR (proposed) vs FACTOR without tone matching,18,-0.003,7,0.5798
+"FACTOR (proposed) vs FACTOR head, static control pool",18,+0.004,11,0.8650
+"Atlas negatives, flat head vs Random-negative control",18,+0.003,7,0.9323
+"HOD (Roy et al. 2022) vs Atlas negatives, flat head",18,+0.013,11,0.1084
+Random-negative control vs ERM (standard fine-tuning),18,+0.019,12,0.0665

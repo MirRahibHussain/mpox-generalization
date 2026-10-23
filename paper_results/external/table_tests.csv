@@ -1,0 +1,10 @@
+Comparison,pairs,mean diff,wins,Wilcoxon p
+FACTOR (proposed) vs ERM (standard fine-tuning),18,+0.018,10,0.1540
+FACTOR without tone matching vs ERM (standard fine-tuning),18,+0.024,13,0.0432
+"Atlas negatives, flat head vs ERM (standard fine-tuning)",18,+0.018,9,0.2288
+HOD (Roy et al. 2022) vs ERM (standard fine-tuning),18,+0.028,12,0.0539
+Random-negative control vs ERM (standard fine-tuning),18,+0.018,11,0.1084
+"FACTOR (proposed) vs Atlas negatives, flat head",18,+0.000,10,1.0000
+FACTOR (proposed) vs HOD (Roy et al. 2022),18,-0.010,9,0.2837
+FACTOR (proposed) vs FACTOR without tone matching,18,-0.005,6,0.2121
+"Atlas negatives, flat head vs Random-negative control",18,-0.000,7,0.7660
