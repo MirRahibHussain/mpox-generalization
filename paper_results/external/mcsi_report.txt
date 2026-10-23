@@ -1,0 +1,14 @@
+MCSI images: 399; duplicates of a study image: 106 (MSLD v2.0 69, MSID 72)
+flagged pairs by reason: {'hash+emb+orb': 93, 'orb': 88, 'emb+orb': 18, 'emb': 4, 'hash+orb': 1}
+borderline ORB pairs (10 <= inliers < 25, not flagged otherwise): 45
+clean external test set: 293 images
+
+            images  dup_msld  dup_msid  duplicate_any  clean
+label                                                       
+acne           100         0         0              0    100
+chickenpox     100         6         0              6     94
+healthy         99         1         6              6     93
+mpox           100        62        66             94      6
+
+clean set by ITA band: {'light': 123, 'intermediate': 101, 'dark': 66, 'unknown': 3}
+Spearman rho between our ITA and the ITA shipped with MCSI: 0.936

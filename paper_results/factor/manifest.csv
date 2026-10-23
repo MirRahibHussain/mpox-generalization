@@ -1,0 +1,53 @@
+name,task,protocol,train_dataset,test_dataset,rep,n_train,n_val,n_test,shared_images,shared_groups,source,dropped_for_duplicates,test_removed_as_duplicates_of_train
+binary_P1_msld_v2_to_msld_v2_rep0,binary,P1,msld_v2,msld_v2,0,527,151,76,0,0,,,
+binary_P1_msld_v2_to_msld_v2_rep1,binary,P1,msld_v2,msld_v2,1,527,151,76,0,0,,,
+binary_P1_msld_v2_to_msld_v2_rep2,binary,P1,msld_v2,msld_v2,2,527,151,76,0,0,,,
+binary_P1_msld_v2_to_msld_v2_rep3,binary,P1,msld_v2,msld_v2,3,527,151,76,0,1,,,
+binary_P1_msld_v2_to_msld_v2_rep4,binary,P1,msld_v2,msld_v2,4,527,151,76,0,0,,,
+binary_P2_msld_v2_to_msld_v2_rep0,binary,P2,msld_v2,msld_v2,0,535,144,74,0,0,official fold 1,1.0,
+binary_P2_msld_v2_to_msld_v2_rep1,binary,P2,msld_v2,msld_v2,1,507,164,82,0,0,official fold 2,1.0,
+binary_P2_msld_v2_to_msld_v2_rep2,binary,P2,msld_v2,msld_v2,2,535,153,64,0,0,official fold 3,2.0,
+binary_P2_msld_v2_to_msld_v2_rep3,binary,P2,msld_v2,msld_v2,3,521,150,81,0,0,official fold 4,2.0,
+binary_P2_msld_v2_to_msld_v2_rep4,binary,P2,msld_v2,msld_v2,4,536,154,63,0,0,official fold 5,1.0,
+binary_P1_msid_to_msid_rep0,binary,P1,msid,msid,0,535,153,77,0,3,,,
+binary_P1_msid_to_msid_rep1,binary,P1,msid,msid,1,535,153,77,0,4,,,
+binary_P1_msid_to_msid_rep2,binary,P1,msid,msid,2,535,153,77,0,3,,,
+binary_P1_msid_to_msid_rep3,binary,P1,msid,msid,3,535,153,77,0,3,,,
+binary_P1_msid_to_msid_rep4,binary,P1,msid,msid,4,535,153,77,0,4,,,
+binary_P2_msid_to_msid_rep0,binary,P2,msid,msid,0,534,152,79,0,0,group split by duplicate group (no patient ids),,
+binary_P2_msid_to_msid_rep1,binary,P2,msid,msid,1,536,153,76,0,0,group split by duplicate group (no patient ids),,
+binary_P2_msid_to_msid_rep2,binary,P2,msid,msid,2,536,153,76,0,0,group split by duplicate group (no patient ids),,
+binary_P2_msid_to_msid_rep3,binary,P2,msid,msid,3,534,154,77,0,0,group split by duplicate group (no patient ids),,
+binary_P2_msid_to_msid_rep4,binary,P2,msid,msid,4,536,153,76,0,0,group split by duplicate group (no patient ids),,
+binary_P3_msld_v2_to_msid_rep0,binary,P3,msld_v2,msid,0,678,76,717,0,0,,,48.0
+binary_P3_msld_v2_to_msid_rep1,binary,P3,msld_v2,msid,1,677,77,717,0,0,,,48.0
+binary_P3_msld_v2_to_msid_rep2,binary,P3,msld_v2,msid,2,678,76,717,0,0,,,48.0
+binary_P3_msid_to_msld_v2_rep0,binary,P3,msid,msld_v2,0,688,77,707,0,0,,,47.0
+binary_P3_msid_to_msld_v2_rep1,binary,P3,msid,msld_v2,1,690,75,707,0,0,,,47.0
+binary_P3_msid_to_msld_v2_rep2,binary,P3,msid,msld_v2,2,689,76,707,0,0,,,47.0
+4class_P1_msld_v2_to_msld_v2_rep0,4class,P1,msld_v2,msld_v2,0,368,106,53,0,0,,,
+4class_P1_msld_v2_to_msld_v2_rep1,4class,P1,msld_v2,msld_v2,1,368,106,53,0,0,,,
+4class_P1_msld_v2_to_msld_v2_rep2,4class,P1,msld_v2,msld_v2,2,368,106,53,0,0,,,
+4class_P1_msld_v2_to_msld_v2_rep3,4class,P1,msld_v2,msld_v2,3,368,106,53,0,0,,,
+4class_P1_msld_v2_to_msld_v2_rep4,4class,P1,msld_v2,msld_v2,4,368,106,53,0,0,,,
+4class_P2_msld_v2_to_msld_v2_rep0,4class,P2,msld_v2,msld_v2,0,371,105,51,0,0,official fold 1,0.0,
+4class_P2_msld_v2_to_msld_v2_rep1,4class,P2,msld_v2,msld_v2,1,351,117,58,0,0,official fold 2,1.0,
+4class_P2_msld_v2_to_msld_v2_rep2,4class,P2,msld_v2,msld_v2,2,375,107,44,0,0,official fold 3,1.0,
+4class_P2_msld_v2_to_msld_v2_rep3,4class,P2,msld_v2,msld_v2,3,363,110,53,0,0,official fold 4,1.0,
+4class_P2_msld_v2_to_msld_v2_rep4,4class,P2,msld_v2,msld_v2,4,384,101,41,0,0,official fold 5,1.0,
+4class_P1_msid_to_msid_rep0,4class,P1,msid,msid,0,535,153,77,0,2,,,
+4class_P1_msid_to_msid_rep1,4class,P1,msid,msid,1,535,153,77,0,3,,,
+4class_P1_msid_to_msid_rep2,4class,P1,msid,msid,2,535,153,77,0,2,,,
+4class_P1_msid_to_msid_rep3,4class,P1,msid,msid,3,535,153,77,0,2,,,
+4class_P1_msid_to_msid_rep4,4class,P1,msid,msid,4,535,153,77,0,1,,,
+4class_P2_msid_to_msid_rep0,4class,P2,msid,msid,0,537,152,76,0,0,group split by duplicate group (no patient ids),,
+4class_P2_msid_to_msid_rep1,4class,P2,msid,msid,1,537,152,76,0,0,group split by duplicate group (no patient ids),,
+4class_P2_msid_to_msid_rep2,4class,P2,msid,msid,2,538,151,76,0,0,group split by duplicate group (no patient ids),,
+4class_P2_msid_to_msid_rep3,4class,P2,msid,msid,3,535,154,76,0,0,group split by duplicate group (no patient ids),,
+4class_P2_msid_to_msid_rep4,4class,P2,msid,msid,4,535,155,75,0,0,group split by duplicate group (no patient ids),,
+4class_P3_msld_v2_to_msid_rep0,4class,P3,msld_v2,msid,0,474,53,717,0,0,,,48.0
+4class_P3_msld_v2_to_msid_rep1,4class,P3,msld_v2,msid,1,474,53,717,0,0,,,48.0
+4class_P3_msld_v2_to_msid_rep2,4class,P3,msld_v2,msid,2,474,53,717,0,0,,,48.0
+4class_P3_msid_to_msld_v2_rep0,4class,P3,msid,msld_v2,0,689,76,480,0,0,,,47.0
+4class_P3_msid_to_msld_v2_rep1,4class,P3,msid,msld_v2,1,689,76,480,0,0,,,47.0
+4class_P3_msid_to_msld_v2_rep2,4class,P3,msid,msld_v2,2,687,78,480,0,0,,,47.0

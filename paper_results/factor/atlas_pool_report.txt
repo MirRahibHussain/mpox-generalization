@@ -1,0 +1,55 @@
+atlas images (usable, exact duplicates dropped): 16557 from 114 conditions
+removed as hash duplicates of study images: 0
+removed by embedding cosine >= 0.92 with a study image (not already caught by hashes): 0
+final atlas pool: 16557 images from 114 conditions
+images per condition: median 102, min 53, max 653
+
+by Fitzpatrick type:
+fitzpatrick
+-1     562
+ 1    2944
+ 2    4804
+ 3    3306
+ 4    2780
+ 5    1529
+ 6     632
+
+by ITA band:
+ita_band
+intermediate    5752
+dark            5437
+light           5249
+unknown          119
+
+conditions (largest 30):
+condition
+psoriasis                      653
+squamous cell carcinoma        580
+lichen planus                  491
+basal cell carcinoma           468
+allergic contact dermatitis    430
+lupus erythematosus            410
+neutrophilic dermatoses        358
+sarcoidosis                    349
+photodermatoses                348
+folliculitis                   340
+scabies                        339
+acne vulgaris                  335
+scleroderma                    309
+pityriasis rubra pilaris       278
+melanoma                       261
+nematode infection             260
+erythema multiforme            236
+granuloma annulare             209
+eczema                         204
+drug eruption                  199
+pityriasis rosea               193
+neurofibromatosis              189
+porokeratosis actinic          183
+mycosis fungoides              182
+acne                           182
+actinic keratosis              175
+hailey hailey disease          174
+prurigo nodularis              170
+vitiligo                       165
+keloid                         156
