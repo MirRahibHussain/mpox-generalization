@@ -31,6 +31,6 @@ hottest (red) region was rated:
 - `mixed`: split between the two
 - `n/a (healthy)`: healthy image, no lesion to compare against
 
-The ratings were made by an AI assistant (Claude, Anthropic) from the overlay
+The ratings were made by an AI assistant from the overlay
 images alone, without lesion masks or dermatologist review. Treat them as
 indicative. The `note` column says what the peak covered.

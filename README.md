@@ -295,7 +295,7 @@ datasets above.
 
 ## Acknowledgment of AI assistance
 
-An AI assistant (Claude, Anthropic) drafted the code, designed and implemented
+An AI assistant drafted the code, designed and implemented
 the TALE method, its random-negative control and the FACTOR method after the author chose their direction, set up and launched the
 Kaggle runs, rated the Grad-CAM maps in `paper_results/gradcam_ratings.csv`,
 and drafted the manuscript. The author is responsible for the study and its
