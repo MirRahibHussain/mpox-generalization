@@ -46,7 +46,8 @@ Binary task (mpox vs. non-mpox), balanced accuracy, mean over models.
 pools, the split files and the per-image predictions of the training runs, so the paper's numbers
 can be recomputed without retraining. See `release/README.md` for what each folder contains.
 `python scripts/20_revision_stats.py` recomputes the statistics added in the journal revision
-(Table 9 intervals, the 36-run skin-tone test, chi-square tests, Table 11); its output is in
+(Table 9 intervals, the 36-run skin-tone test, chi-square tests, Table 11, Tables 6-8 and a robustness check
+of the main paired comparisons); its output is in
 `paper_results/revision_stats.txt`. `python scripts/21_verify_splits.py` checks all 52 released
 split files against the 714 released prediction files (all match).
 
@@ -235,6 +236,16 @@ use hashes from before that history was rewritten: `f7bc898` (FACTOR study log) 
 `7e1c6e9` (external-test log) is `e5fd6e9`; the code and commit times are unchanged. That commit history is
 available from the authors on request. The pre-registration was committed there on 20 October 2026 at 10:54 UTC and
 amendment 1 at 11:44 UTC; the external-test session started at 11:45 UTC.
+
+Note on the pre-registration record: `PREREGISTRATION_MCSI.md` is kept exactly as it was written and used,
+so it still says that the commit time on GitHub is the record of when the plan was fixed. That sentence
+refers to the development repository. In this snapshot repository every file carries the date of the
+snapshot (November 2026), which is not the date of the plan. The record of the plan's timing is (i) the
+commit times in the development history (available from the authors on request) and (ii) the start time of
+the external-test session, Kaggle Version 7 (run 360404890), at 11:45 UTC on 20 October 2026, after the
+plan (10:54 UTC) and amendment 1 (11:44 UTC). As the plan itself states, it was written after the results
+on MSLD v2.0 and MSID, including most of the outlier-exposure session, were known, but before any MCSI
+image was loaded.
 
 Note on amendment 1: it describes most removed mpox images as cropped copies found only by ORB. That holds
 for the flagged *pairs* (88 of 204 pairs were ORB-only); per *image*, 95 of the 106 removed images also had a

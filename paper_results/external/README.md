@@ -2,6 +2,8 @@
 
 Unedited output of `run_external.sh` (Tesla T4, 326 min, exit 0; deterministic cuDNN). The analysis plan
 (`PREREGISTRATION_MCSI.md`, copied here as the run used it) was committed before any model saw MCSI.
+It was committed to the authors' development repository; the dates of files in this snapshot repository are not
+the dates of the plan (see "Note on the pre-registration record" in the main README).
 108 trainings: 6 methods × 3 backbones × 3 seeds × 2 training datasets (P3). Every model predicted its usual
 cross-dataset test set and every MCSI image.
 

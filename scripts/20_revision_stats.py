@@ -4,7 +4,9 @@ Usage: python scripts/20_revision_stats.py [repo_root]
        python scripts/20_revision_stats.py > paper_results/revision_stats.txt
 
 Covers Sections 7.5 (chi-square tests, 36-run Wilcoxon, bootstrap CI), Table 9 (Wilson and Newcombe
-intervals) and Table 11 (closed-set balanced accuracy and unseen-class specificity, TALE study).
+intervals), Table 11 (closed-set balanced accuracy and unseen-class specificity, TALE study), the
+evaluation-study Tables 6-8, and a robustness check of the main paired comparisons (hierarchical
+bootstrap over backbones and seeds, Holm adjustment across all sessions).
 Bootstrap intervals can differ in the third decimal with the random seed.
 """
 import sys, glob, os, math
@@ -106,3 +108,44 @@ for e in p3:
     ds.append((p[p.label.isin({"chickenpox", "measles"})].y_pred == 0).mean())
 print(f"Table 8, evaluation study (18 runs): closed-set bal. acc. {np.mean(cs):.3f}, all classes {np.mean([e['ba'] for e in p3]):.3f}, "
       f"shared-disease spec. {np.mean(ds):.2f}, healthy spec. {np.mean(hs):.2f}, unseen-class spec. {np.mean(uns):.2f}")
+
+print("\n== 6. Robustness of the main paired comparisons, trained on MSID (cross-dataset)")
+print("Pairs are (backbone, seed); seeds are nested in backbones, so the 9 pairs are not fully independent.")
+print("Hierarchical bootstrap: resample the 3 backbones with replacement, then 3 seeds within each.")
+print("Holm adjustment here is across all comparisons listed below (all sessions together).")
+def load(session):
+    if session in ("tale", "control"):
+        t = pd.read_csv(f"{R}/paper_results/{session}/runs.csv")
+        t = t[(t.p == "P3") & (t.tr == "m")]
+        return t.rename(columns={"mo": "bb", "me": "method", "ba": "y"})[["bb", "rep", "method", "y"]]
+    if session == "factor":
+        t = pd.read_csv(f"{R}/paper_results/factor/all_runs.csv")
+        t = t[(t.protocol == "P3") & (t.direction == "msid->msld_v2")]
+        return t.rename(columns={"model": "bb", "balanced_accuracy": "y"})[["bb", "rep", "method", "y"]]
+    t = pd.read_csv(f"{R}/paper_results/external/external_runs.csv")
+    t = t[t.direction == "msid->mcsi"]
+    return t.rename(columns={"model": "bb", "balanced_accuracy": "y"})[["bb", "rep", "method", "y"]]
+comps = [("tale", "tale", "erm"), ("tale", "la", "erm"), ("control", "tale", "erm"), ("control", "rand", "erm"),
+         ("control", "la", "rand"), ("factor", "rand", "erm"), ("factor", "atlas", "erm"), ("factor", "hod", "erm"),
+         ("external", "rand", "erm"), ("external", "atlas", "erm"), ("external", "hod", "erm")]
+rng = np.random.default_rng(0); out = []
+for s, a, b in comps:
+    t = load(s).pivot_table(index=["bb", "rep"], columns="method", values="y")
+    d = (t[a] - t[b]).dropna()
+    bbs = d.index.get_level_values(0).unique()
+    groups = [d.xs(k).values for k in bbs]
+    boot = []
+    for _ in range(10000):
+        pick = rng.integers(0, len(groups), len(groups))
+        boot.append(np.mean([rng.choice(groups[i], len(groups[i])).mean() for i in pick]))
+    per_bb = [g.mean() for g in groups]
+    p = stats.wilcoxon(d.values, method="exact").pvalue
+    out.append(dict(session=s, comparison=f"{a} - {b}", n=len(d), mean=100*d.mean(),
+                    lo=100*np.percentile(boot, 2.5), hi=100*np.percentile(boot, 97.5),
+                    backbones_positive=f"{sum(x > 0 for x in per_bb)}/{len(per_bb)}", p=p))
+o = pd.DataFrame(out)
+order = np.argsort(o.p.values); adj = np.empty(len(o)); run = 0
+for k, i in enumerate(order):
+    run = max(run, min(1, (len(o) - k) * o.p.values[i])); adj[i] = run
+o["p_holm_all"] = adj
+print(o.to_string(index=False, float_format=lambda v: f"{v:.3f}" if abs(v) < 1 else f"{v:.1f}"))
