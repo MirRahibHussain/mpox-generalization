@@ -230,9 +230,10 @@ or MSID images), leaving 293 clean images (6 mpox). Pre-registered primary test,
   balanced accuracy on MCSI (ρ = 0.03), specificity on MSLD v2.0's other diseases did (ρ = 0.76).
 
 Note on code versions: this repository is a snapshot of the final code, results and released files. The run
-logs name the code version of each Kaggle run by a commit of the authors' development repository (for example
-`f7bc898` in the FACTOR study log and `7e1c6e9` in the external-test log); that commit history is available
-from the authors on request. The pre-registration was committed there on 20 October 2026 at 10:54 UTC and
+logs name the code version of each Kaggle run by a commit of the authors' development repository. Two logs
+use hashes from before that history was rewritten: `f7bc898` (FACTOR study log) is `3a9f98e` there and
+`7e1c6e9` (external-test log) is `e5fd6e9`; the code and commit times are unchanged. That commit history is
+available from the authors on request. The pre-registration was committed there on 20 October 2026 at 10:54 UTC and
 amendment 1 at 11:44 UTC; the external-test session started at 11:45 UTC.
 
 Note on amendment 1: it describes most removed mpox images as cropped copies found only by ORB. That holds
