@@ -1,0 +1,412 @@
+== [02:32:32 UTC, +0 min] environment
+torch 2.11.0+cu128 | timm 1.0.29 | cuda True
+name, memory.total [MiB]
+Tesla T4, 15360 MiB
+Tesla T4, 15360 MiB
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.5/44.5 kB 1.8 MB/s eta 0:00:00
+== [02:33:07 UTC, +0 min] 0. locate datasets
+MSLD=/kaggle/input/datasets/joydippaul/mpox-skin-lesion-dataset-version-20-msld-v20
+MSID=/kaggle/input/datasets/dipuiucse/monkeypoxskinimagedataset
+== [02:33:08 UTC, +0 min] 1. index
+Indexing msld_v2 from /kaggle/input/datasets/joydippaul/mpox-skin-lesion-dataset-version-20-msld-v20
+  3775 files -> 754 unique images
+  [check] expected 755 unique images for msld_v2, found 754. Inspect index_report.txt before continuing.
+Indexing msid from /kaggle/input/datasets/dipuiucse/monkeypoxskinimagedataset
+  770 files -> 765 unique images
+msid: 765 unique images
+    healthy     292
+    mpox        277
+    chickenpox  106
+    measles     90
+msld_v2: 754 unique images
+    mpox        284
+    hfmd        161
+    healthy     114
+    chickenpox  74
+    cowpox      66
+    measles     55
+    fold 1: train=536 val=144 test=74
+    fold 2: train=508 val=164 test=82
+    fold 3: train=538 val=153 test=64
+    fold 4: train=524 val=150 test=81
+    fold 5: train=538 val=154 test=63
+
+Example file names:
+  msld_v2: CHP_08_01.jpg  ->  patient_hint=CHP_08
+  msld_v2: CHP_08_02.jpg  ->  patient_hint=CHP_08
+  msld_v2: CHP_14_01.jpg  ->  patient_hint=CHP_14
+  msid: chickenpox1.png  ->  patient_hint=chickenpox
+  msid: chickenpox10.png  ->  patient_hint=chickenpox
+  msid: chickenpox100.png  ->  patient_hint=chickenpox
+
+== [02:34:04 UTC, +1 min] 2. embedding near-duplicates (auto-accept cos >= 0.97; rest saved for review)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+73 candidate pairs; 23 auto-accepted (cos >= 0.97); 50 need review (50 drawn on embedding_review_sheet.png)
+== [02:34:23 UTC, +1 min] 3. duplicate audit + ITA
+Hashing 1519 images ...
+  hashed 250/1519
+  hashed 500/1519
+  hashed 750/1519
+  hashed 1000/1519
+  hashed 1250/1519
+  hashed 1500/1519
+  + 23 accepted embedding pairs
+        scope  images  images_in_duplicate_groups  pairs  label_mismatch_pairs
+         msid   765.0                          76     18                     1
+      msld_v2   754.0                          51      3                     0
+cross-dataset     NaN                          95     67                     0
+Estimating ITA ...
+ita_band            dark  intermediate  light  unknown
+dataset label                                         
+msid    chickenpox     7            16     83        0
+        healthy       32            45    215        0
+        measles       29            22     39        0
+        mpox         116            67     88        6
+msld_v2 chickenpox    12            22     40        0
+        cowpox        16            22     28        0
+        healthy       30            33     51        0
+        hfmd          31            43     87        0
+        measles       12             8     35        0
+        mpox         119            70     95        0
+== [02:34:49 UTC, +2 min] 4. splits + leakage check
+Wrote 52 splits. P2/P3: no shared images or duplicate groups.
+P1 (naive): duplicate groups shared by train(+val) and test, mean per split:
+task    train_dataset
+4class  msid             2.0
+        msld_v2          0.0
+binary  msid             3.4
+        msld_v2          0.2
+== [02:34:53 UTC, +2 min] 5a. smoke test
+Image cache: 1519 new, 0 reused -> /tmp/mpoxgen_img288
+3 runs (3 splits x 1 models) -> results_smoke/
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[1/3] binary_P3_msid_to_msld_v2_rep0 mobilenetv3_large_100: bal_acc=0.597 auroc=0.744 (1.11 min; 0.06 h elapsed)
+[2/3] binary_P2_msid_to_msid_rep0 mobilenetv3_large_100: bal_acc=0.891 auroc=0.960 (0.26 min; 0.07 h elapsed)
+[3/3] binary_P1_msid_to_msid_rep0 mobilenetv3_large_100: bal_acc=0.778 auroc=0.920 (0.19 min; 0.07 h elapsed)
+Collected 3 finished runs into results_smoke/all_runs.csv
+== [02:36:42 UTC, +4 min] 5b. full study: binary (time budget 10.5 h)
+Image cache: 0 new, 1519 reused -> /tmp/mpoxgen_img288
+156 runs (26 splits x 6 models) -> results/
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[1/156] binary_P3_msid_to_msld_v2_rep0 resnet50: bal_acc=0.655 auroc=0.817 (1.41 min; 0.09 h elapsed)
+[2/156] binary_P3_msid_to_msld_v2_rep0 densenet121: bal_acc=0.676 auroc=0.811 (0.91 min; 0.11 h elapsed)
+[3/156] binary_P3_msid_to_msld_v2_rep0 efficientnet_b0: bal_acc=0.684 auroc=0.771 (1.41 min; 0.13 h elapsed)
+[4/156] binary_P3_msid_to_msld_v2_rep0 mobilenetv3_large_100: bal_acc=0.687 auroc=0.791 (1.64 min; 0.16 h elapsed)
+[5/156] binary_P3_msid_to_msld_v2_rep0 convnext_tiny: bal_acc=0.692 auroc=0.872 (1.36 min; 0.19 h elapsed)
+[6/156] binary_P3_msid_to_msld_v2_rep0 vit_small_patch16_224: bal_acc=0.769 auroc=0.864 (0.56 min; 0.19 h elapsed)
+[7/156] binary_P3_msid_to_msld_v2_rep1 resnet50: bal_acc=0.653 auroc=0.767 (0.85 min; 0.21 h elapsed)
+[8/156] binary_P3_msid_to_msld_v2_rep1 densenet121: bal_acc=0.681 auroc=0.806 (1.03 min; 0.23 h elapsed)
+[9/156] binary_P3_msid_to_msld_v2_rep1 efficientnet_b0: bal_acc=0.660 auroc=0.770 (0.85 min; 0.24 h elapsed)
+[10/156] binary_P3_msid_to_msld_v2_rep1 mobilenetv3_large_100: bal_acc=0.647 auroc=0.766 (0.72 min; 0.25 h elapsed)
+[11/156] binary_P3_msid_to_msld_v2_rep1 convnext_tiny: bal_acc=0.699 auroc=0.824 (0.8 min; 0.27 h elapsed)
+[12/156] binary_P3_msid_to_msld_v2_rep1 vit_small_patch16_224: bal_acc=0.714 auroc=0.848 (0.56 min; 0.28 h elapsed)
+[13/156] binary_P3_msid_to_msld_v2_rep2 resnet50: bal_acc=0.685 auroc=0.793 (1.45 min; 0.30 h elapsed)
+[14/156] binary_P3_msid_to_msld_v2_rep2 densenet121: bal_acc=0.684 auroc=0.818 (1.04 min; 0.32 h elapsed)
+[15/156] binary_P3_msid_to_msld_v2_rep2 efficientnet_b0: bal_acc=0.681 auroc=0.803 (0.73 min; 0.33 h elapsed)
+[16/156] binary_P3_msid_to_msld_v2_rep2 mobilenetv3_large_100: bal_acc=0.678 auroc=0.764 (0.75 min; 0.34 h elapsed)
+[17/156] binary_P3_msid_to_msld_v2_rep2 convnext_tiny: bal_acc=0.707 auroc=0.828 (1.3 min; 0.36 h elapsed)
+[18/156] binary_P3_msid_to_msld_v2_rep2 vit_small_patch16_224: bal_acc=0.740 auroc=0.845 (0.56 min; 0.37 h elapsed)
+[19/156] binary_P3_msld_v2_to_msid_rep0 resnet50: bal_acc=0.850 auroc=0.936 (1.27 min; 0.40 h elapsed)
+[20/156] binary_P3_msld_v2_to_msid_rep0 densenet121: bal_acc=0.845 auroc=0.935 (1.81 min; 0.43 h elapsed)
+[21/156] binary_P3_msld_v2_to_msid_rep0 efficientnet_b0: bal_acc=0.833 auroc=0.917 (1.1 min; 0.45 h elapsed)
+[22/156] binary_P3_msld_v2_to_msid_rep0 mobilenetv3_large_100: bal_acc=0.820 auroc=0.895 (1.11 min; 0.46 h elapsed)
+[23/156] binary_P3_msld_v2_to_msid_rep0 convnext_tiny: bal_acc=0.874 auroc=0.936 (1.32 min; 0.49 h elapsed)
+[24/156] binary_P3_msld_v2_to_msid_rep0 vit_small_patch16_224: bal_acc=0.906 auroc=0.958 (0.83 min; 0.50 h elapsed)
+[25/156] binary_P3_msld_v2_to_msid_rep1 resnet50: bal_acc=0.737 auroc=0.893 (0.72 min; 0.51 h elapsed)
+[26/156] binary_P3_msld_v2_to_msid_rep1 densenet121: bal_acc=0.867 auroc=0.941 (1.68 min; 0.54 h elapsed)
+[27/156] binary_P3_msld_v2_to_msid_rep1 efficientnet_b0: bal_acc=0.861 auroc=0.937 (1.35 min; 0.56 h elapsed)
+[28/156] binary_P3_msld_v2_to_msid_rep1 mobilenetv3_large_100: bal_acc=0.853 auroc=0.934 (0.8 min; 0.58 h elapsed)
+[29/156] binary_P3_msld_v2_to_msid_rep1 convnext_tiny: bal_acc=0.865 auroc=0.948 (1.19 min; 0.60 h elapsed)
+[30/156] binary_P3_msld_v2_to_msid_rep1 vit_small_patch16_224: bal_acc=0.893 auroc=0.962 (0.6 min; 0.61 h elapsed)
+[31/156] binary_P3_msld_v2_to_msid_rep2 resnet50: bal_acc=0.861 auroc=0.942 (1.49 min; 0.63 h elapsed)
+[32/156] binary_P3_msld_v2_to_msid_rep2 densenet121: bal_acc=0.870 auroc=0.932 (2.07 min; 0.67 h elapsed)
+[33/156] binary_P3_msld_v2_to_msid_rep2 efficientnet_b0: bal_acc=0.822 auroc=0.919 (0.69 min; 0.68 h elapsed)
+[34/156] binary_P3_msld_v2_to_msid_rep2 mobilenetv3_large_100: bal_acc=0.816 auroc=0.914 (0.8 min; 0.69 h elapsed)
+[35/156] binary_P3_msld_v2_to_msid_rep2 convnext_tiny: bal_acc=0.884 auroc=0.949 (0.88 min; 0.71 h elapsed)
+[36/156] binary_P3_msld_v2_to_msid_rep2 vit_small_patch16_224: bal_acc=0.886 auroc=0.959 (0.79 min; 0.72 h elapsed)
+[37/156] binary_P2_msid_to_msid_rep0 resnet50: bal_acc=0.913 auroc=0.972 (0.86 min; 0.73 h elapsed)
+[38/156] binary_P2_msid_to_msid_rep0 densenet121: bal_acc=0.936 auroc=0.988 (1.26 min; 0.76 h elapsed)
+[39/156] binary_P2_msid_to_msid_rep0 efficientnet_b0: bal_acc=0.928 auroc=0.992 (0.55 min; 0.76 h elapsed)
+[40/156] binary_P2_msid_to_msid_rep0 mobilenetv3_large_100: bal_acc=0.918 auroc=0.978 (0.6 min; 0.77 h elapsed)
+[41/156] binary_P2_msid_to_msid_rep0 convnext_tiny: bal_acc=0.918 auroc=0.975 (1.08 min; 0.79 h elapsed)
+[42/156] binary_P2_msid_to_msid_rep0 vit_small_patch16_224: bal_acc=0.946 auroc=0.987 (0.63 min; 0.80 h elapsed)
+[43/156] binary_P2_msid_to_msid_rep1 resnet50: bal_acc=0.911 auroc=0.980 (1.09 min; 0.82 h elapsed)
+[44/156] binary_P2_msid_to_msid_rep1 densenet121: bal_acc=0.901 auroc=0.984 (1.04 min; 0.84 h elapsed)
+[45/156] binary_P2_msid_to_msid_rep1 efficientnet_b0: bal_acc=0.871 auroc=0.964 (0.82 min; 0.85 h elapsed)
+[46/156] binary_P2_msid_to_msid_rep1 mobilenetv3_large_100: bal_acc=0.871 auroc=0.979 (0.96 min; 0.87 h elapsed)
+[47/156] binary_P2_msid_to_msid_rep1 convnext_tiny: bal_acc=0.941 auroc=0.989 (1.07 min; 0.89 h elapsed)
+[48/156] binary_P2_msid_to_msid_rep1 vit_small_patch16_224: bal_acc=0.940 auroc=0.994 (0.67 min; 0.90 h elapsed)
+[49/156] binary_P2_msid_to_msid_rep2 resnet50: bal_acc=0.932 auroc=0.982 (1.45 min; 0.92 h elapsed)
+[50/156] binary_P2_msid_to_msid_rep2 densenet121: bal_acc=0.929 auroc=0.978 (0.7 min; 0.94 h elapsed)
+[51/156] binary_P2_msid_to_msid_rep2 efficientnet_b0: bal_acc=0.969 auroc=0.996 (0.58 min; 0.95 h elapsed)
+[52/156] binary_P2_msid_to_msid_rep2 mobilenetv3_large_100: bal_acc=0.943 auroc=0.980 (0.37 min; 0.95 h elapsed)
+[53/156] binary_P2_msid_to_msid_rep2 convnext_tiny: bal_acc=0.941 auroc=0.989 (1.11 min; 0.97 h elapsed)
+[54/156] binary_P2_msid_to_msid_rep2 vit_small_patch16_224: bal_acc=0.914 auroc=0.988 (0.79 min; 0.98 h elapsed)
+[55/156] binary_P2_msid_to_msid_rep3 resnet50: bal_acc=0.900 auroc=0.960 (1.04 min; 1.00 h elapsed)
+[56/156] binary_P2_msid_to_msid_rep3 densenet121: bal_acc=0.934 auroc=0.986 (0.87 min; 1.02 h elapsed)
+[57/156] binary_P2_msid_to_msid_rep3 efficientnet_b0: bal_acc=0.924 auroc=0.980 (0.64 min; 1.03 h elapsed)
+[58/156] binary_P2_msid_to_msid_rep3 mobilenetv3_large_100: bal_acc=0.838 auroc=0.960 (0.41 min; 1.03 h elapsed)
+[59/156] binary_P2_msid_to_msid_rep3 convnext_tiny: bal_acc=0.913 auroc=0.981 (0.81 min; 1.05 h elapsed)
+[60/156] binary_P2_msid_to_msid_rep3 vit_small_patch16_224: bal_acc=0.917 auroc=0.986 (0.48 min; 1.06 h elapsed)
+[61/156] binary_P2_msid_to_msid_rep4 resnet50: bal_acc=0.923 auroc=0.977 (1.08 min; 1.07 h elapsed)
+[62/156] binary_P2_msid_to_msid_rep4 densenet121: bal_acc=0.906 auroc=0.989 (0.76 min; 1.09 h elapsed)
+[63/156] binary_P2_msid_to_msid_rep4 efficientnet_b0: bal_acc=0.895 auroc=0.973 (0.44 min; 1.09 h elapsed)
+[64/156] binary_P2_msid_to_msid_rep4 mobilenetv3_large_100: bal_acc=0.931 auroc=0.984 (0.66 min; 1.11 h elapsed)
+[65/156] binary_P2_msid_to_msid_rep4 convnext_tiny: bal_acc=0.906 auroc=0.979 (0.78 min; 1.12 h elapsed)
+[66/156] binary_P2_msid_to_msid_rep4 vit_small_patch16_224: bal_acc=0.944 auroc=0.980 (0.51 min; 1.13 h elapsed)
+[67/156] binary_P2_msld_v2_to_msld_v2_rep0 resnet50: bal_acc=0.775 auroc=0.857 (1.32 min; 1.15 h elapsed)
+[68/156] binary_P2_msld_v2_to_msld_v2_rep0 densenet121: bal_acc=0.822 auroc=0.886 (0.94 min; 1.17 h elapsed)
+[69/156] binary_P2_msld_v2_to_msld_v2_rep0 efficientnet_b0: bal_acc=0.714 auroc=0.786 (0.73 min; 1.18 h elapsed)
+[70/156] binary_P2_msld_v2_to_msld_v2_rep0 mobilenetv3_large_100: bal_acc=0.770 auroc=0.837 (0.6 min; 1.19 h elapsed)
+[71/156] binary_P2_msld_v2_to_msld_v2_rep0 convnext_tiny: bal_acc=0.891 auroc=0.924 (1.8 min; 1.22 h elapsed)
+[72/156] binary_P2_msld_v2_to_msld_v2_rep0 vit_small_patch16_224: bal_acc=0.878 auroc=0.928 (0.67 min; 1.23 h elapsed)
+[73/156] binary_P2_msld_v2_to_msld_v2_rep1 resnet50: bal_acc=0.650 auroc=0.799 (1.47 min; 1.25 h elapsed)
+[74/156] binary_P2_msld_v2_to_msld_v2_rep1 densenet121: bal_acc=0.754 auroc=0.820 (1.17 min; 1.27 h elapsed)
+[75/156] binary_P2_msld_v2_to_msld_v2_rep1 efficientnet_b0: bal_acc=0.699 auroc=0.806 (0.82 min; 1.29 h elapsed)
+[76/156] binary_P2_msld_v2_to_msld_v2_rep1 mobilenetv3_large_100: bal_acc=0.724 auroc=0.836 (0.82 min; 1.30 h elapsed)
+[77/156] binary_P2_msld_v2_to_msld_v2_rep1 convnext_tiny: bal_acc=0.795 auroc=0.844 (0.78 min; 1.31 h elapsed)
+[78/156] binary_P2_msld_v2_to_msld_v2_rep1 vit_small_patch16_224: bal_acc=0.818 auroc=0.908 (0.88 min; 1.33 h elapsed)
+[79/156] binary_P2_msld_v2_to_msld_v2_rep2 resnet50: bal_acc=0.848 auroc=0.908 (1.13 min; 1.35 h elapsed)
+[80/156] binary_P2_msld_v2_to_msld_v2_rep2 densenet121: bal_acc=0.848 auroc=0.907 (0.87 min; 1.36 h elapsed)
+[81/156] binary_P2_msld_v2_to_msld_v2_rep2 efficientnet_b0: bal_acc=0.871 auroc=0.889 (0.66 min; 1.37 h elapsed)
+[82/156] binary_P2_msld_v2_to_msld_v2_rep2 mobilenetv3_large_100: bal_acc=0.837 auroc=0.912 (0.64 min; 1.39 h elapsed)
+[83/156] binary_P2_msld_v2_to_msld_v2_rep2 convnext_tiny: bal_acc=0.871 auroc=0.904 (0.95 min; 1.40 h elapsed)
+[84/156] binary_P2_msld_v2_to_msld_v2_rep2 vit_small_patch16_224: bal_acc=0.874 auroc=0.951 (0.48 min; 1.41 h elapsed)
+[85/156] binary_P2_msld_v2_to_msld_v2_rep3 resnet50: bal_acc=0.722 auroc=0.781 (1.01 min; 1.43 h elapsed)
+[86/156] binary_P2_msld_v2_to_msld_v2_rep3 densenet121: bal_acc=0.796 auroc=0.872 (0.83 min; 1.44 h elapsed)
+[87/156] binary_P2_msld_v2_to_msld_v2_rep3 efficientnet_b0: bal_acc=0.769 auroc=0.847 (0.77 min; 1.45 h elapsed)
+[88/156] binary_P2_msld_v2_to_msld_v2_rep3 mobilenetv3_large_100: bal_acc=0.667 auroc=0.777 (0.7 min; 1.47 h elapsed)
+[89/156] binary_P2_msld_v2_to_msld_v2_rep3 convnext_tiny: bal_acc=0.843 auroc=0.923 (1.51 min; 1.49 h elapsed)
+[90/156] binary_P2_msld_v2_to_msld_v2_rep3 vit_small_patch16_224: bal_acc=0.787 auroc=0.896 (0.56 min; 1.50 h elapsed)
+[91/156] binary_P2_msld_v2_to_msld_v2_rep4 resnet50: bal_acc=0.844 auroc=0.895 (1.28 min; 1.52 h elapsed)
+[92/156] binary_P2_msld_v2_to_msld_v2_rep4 densenet121: bal_acc=0.883 auroc=0.920 (1.55 min; 1.55 h elapsed)
+[93/156] binary_P2_msld_v2_to_msld_v2_rep4 efficientnet_b0: bal_acc=0.817 auroc=0.915 (0.58 min; 1.56 h elapsed)
+[94/156] binary_P2_msld_v2_to_msld_v2_rep4 mobilenetv3_large_100: bal_acc=0.839 auroc=0.927 (0.69 min; 1.57 h elapsed)
+[95/156] binary_P2_msld_v2_to_msld_v2_rep4 convnext_tiny: bal_acc=0.894 auroc=0.936 (0.99 min; 1.59 h elapsed)
+[96/156] binary_P2_msld_v2_to_msld_v2_rep4 vit_small_patch16_224: bal_acc=0.856 auroc=0.936 (0.52 min; 1.60 h elapsed)
+[97/156] binary_P1_msid_to_msid_rep0 resnet50: bal_acc=0.980 auroc=0.999 (1.09 min; 1.61 h elapsed)
+[98/156] binary_P1_msid_to_msid_rep0 densenet121: bal_acc=0.980 auroc=0.985 (1.15 min; 1.63 h elapsed)
+[99/156] binary_P1_msid_to_msid_rep0 efficientnet_b0: bal_acc=0.916 auroc=0.982 (0.95 min; 1.65 h elapsed)
+[100/156] binary_P1_msid_to_msid_rep0 mobilenetv3_large_100: bal_acc=0.969 auroc=0.989 (0.46 min; 1.66 h elapsed)
+[101/156] binary_P1_msid_to_msid_rep0 convnext_tiny: bal_acc=0.990 auroc=0.998 (0.9 min; 1.67 h elapsed)
+[102/156] binary_P1_msid_to_msid_rep0 vit_small_patch16_224: bal_acc=0.980 auroc=0.995 (0.6 min; 1.68 h elapsed)
+[103/156] binary_P1_msid_to_msid_rep1 resnet50: bal_acc=0.906 auroc=0.987 (1.09 min; 1.70 h elapsed)
+[104/156] binary_P1_msid_to_msid_rep1 densenet121: bal_acc=0.918 auroc=0.986 (1.49 min; 1.73 h elapsed)
+[105/156] binary_P1_msid_to_msid_rep1 efficientnet_b0: bal_acc=0.962 auroc=0.988 (0.84 min; 1.74 h elapsed)
+[106/156] binary_P1_msid_to_msid_rep1 mobilenetv3_large_100: bal_acc=0.908 auroc=0.964 (0.67 min; 1.75 h elapsed)
+[107/156] binary_P1_msid_to_msid_rep1 convnext_tiny: bal_acc=0.918 auroc=0.985 (1.06 min; 1.77 h elapsed)
+[108/156] binary_P1_msid_to_msid_rep1 vit_small_patch16_224: bal_acc=0.944 auroc=0.985 (0.64 min; 1.78 h elapsed)
+[109/156] binary_P1_msid_to_msid_rep2 resnet50: bal_acc=0.923 auroc=0.972 (1.51 min; 1.81 h elapsed)
+[110/156] binary_P1_msid_to_msid_rep2 densenet121: bal_acc=0.906 auroc=0.977 (1.31 min; 1.83 h elapsed)
+[111/156] binary_P1_msid_to_msid_rep2 efficientnet_b0: bal_acc=0.865 auroc=0.958 (0.56 min; 1.84 h elapsed)
+[112/156] binary_P1_msid_to_msid_rep2 mobilenetv3_large_100: bal_acc=0.895 auroc=0.948 (0.35 min; 1.84 h elapsed)
+[113/156] binary_P1_msid_to_msid_rep2 convnext_tiny: bal_acc=0.883 auroc=0.958 (0.9 min; 1.86 h elapsed)
+[114/156] binary_P1_msid_to_msid_rep2 vit_small_patch16_224: bal_acc=0.936 auroc=0.985 (1.24 min; 1.88 h elapsed)
+[115/156] binary_P1_msid_to_msid_rep3 resnet50: bal_acc=0.962 auroc=0.998 (0.95 min; 1.90 h elapsed)
+[116/156] binary_P1_msid_to_msid_rep3 densenet121: bal_acc=0.972 auroc=0.997 (1.48 min; 1.92 h elapsed)
+[117/156] binary_P1_msid_to_msid_rep3 efficientnet_b0: bal_acc=0.913 auroc=0.973 (0.45 min; 1.93 h elapsed)
+[118/156] binary_P1_msid_to_msid_rep3 mobilenetv3_large_100: bal_acc=0.969 auroc=0.993 (0.83 min; 1.94 h elapsed)
+[119/156] binary_P1_msid_to_msid_rep3 convnext_tiny: bal_acc=0.962 auroc=0.980 (1.22 min; 1.96 h elapsed)
+[120/156] binary_P1_msid_to_msid_rep3 vit_small_patch16_224: bal_acc=0.959 auroc=0.997 (0.82 min; 1.98 h elapsed)
+[121/156] binary_P1_msid_to_msid_rep4 resnet50: bal_acc=0.934 auroc=0.985 (1.14 min; 2.00 h elapsed)
+[122/156] binary_P1_msid_to_msid_rep4 densenet121: bal_acc=0.936 auroc=0.985 (1.15 min; 2.01 h elapsed)
+[123/156] binary_P1_msid_to_msid_rep4 efficientnet_b0: bal_acc=0.913 auroc=0.979 (0.52 min; 2.02 h elapsed)
+[124/156] binary_P1_msid_to_msid_rep4 mobilenetv3_large_100: bal_acc=0.916 auroc=0.981 (0.47 min; 2.03 h elapsed)
+[125/156] binary_P1_msid_to_msid_rep4 convnext_tiny: bal_acc=0.962 auroc=0.988 (0.74 min; 2.04 h elapsed)
+[126/156] binary_P1_msid_to_msid_rep4 vit_small_patch16_224: bal_acc=0.962 auroc=0.994 (0.86 min; 2.06 h elapsed)
+[127/156] binary_P1_msld_v2_to_msld_v2_rep0 resnet50: bal_acc=0.807 auroc=0.902 (1.05 min; 2.08 h elapsed)
+[128/156] binary_P1_msld_v2_to_msld_v2_rep0 densenet121: bal_acc=0.888 auroc=0.944 (1.43 min; 2.10 h elapsed)
+[129/156] binary_P1_msld_v2_to_msld_v2_rep0 efficientnet_b0: bal_acc=0.850 auroc=0.947 (0.79 min; 2.11 h elapsed)
+[130/156] binary_P1_msld_v2_to_msld_v2_rep0 mobilenetv3_large_100: bal_acc=0.792 auroc=0.900 (0.58 min; 2.12 h elapsed)
+[131/156] binary_P1_msld_v2_to_msld_v2_rep0 convnext_tiny: bal_acc=0.850 auroc=0.910 (1.08 min; 2.14 h elapsed)
+[132/156] binary_P1_msld_v2_to_msld_v2_rep0 vit_small_patch16_224: bal_acc=0.865 auroc=0.944 (0.6 min; 2.15 h elapsed)
+[133/156] binary_P1_msld_v2_to_msld_v2_rep1 resnet50: bal_acc=0.840 auroc=0.899 (1.46 min; 2.18 h elapsed)
+[134/156] binary_P1_msld_v2_to_msld_v2_rep1 densenet121: bal_acc=0.825 auroc=0.912 (1.04 min; 2.19 h elapsed)
+[135/156] binary_P1_msld_v2_to_msld_v2_rep1 efficientnet_b0: bal_acc=0.742 auroc=0.857 (0.62 min; 2.20 h elapsed)
+[136/156] binary_P1_msld_v2_to_msld_v2_rep1 mobilenetv3_large_100: bal_acc=0.826 auroc=0.913 (0.8 min; 2.22 h elapsed)
+[137/156] binary_P1_msld_v2_to_msld_v2_rep1 convnext_tiny: bal_acc=0.891 auroc=0.960 (1.7 min; 2.25 h elapsed)
+[138/156] binary_P1_msld_v2_to_msld_v2_rep1 vit_small_patch16_224: bal_acc=0.919 auroc=0.966 (0.57 min; 2.26 h elapsed)
+[139/156] binary_P1_msld_v2_to_msld_v2_rep2 resnet50: bal_acc=0.744 auroc=0.839 (1.04 min; 2.27 h elapsed)
+[140/156] binary_P1_msld_v2_to_msld_v2_rep2 densenet121: bal_acc=0.803 auroc=0.898 (1.36 min; 2.30 h elapsed)
+[141/156] binary_P1_msld_v2_to_msld_v2_rep2 efficientnet_b0: bal_acc=0.807 auroc=0.885 (0.48 min; 2.30 h elapsed)
+[142/156] binary_P1_msld_v2_to_msld_v2_rep2 mobilenetv3_large_100: bal_acc=0.842 auroc=0.878 (0.41 min; 2.31 h elapsed)
+[143/156] binary_P1_msld_v2_to_msld_v2_rep2 convnext_tiny: bal_acc=0.850 auroc=0.904 (1.06 min; 2.33 h elapsed)
+[144/156] binary_P1_msld_v2_to_msld_v2_rep2 vit_small_patch16_224: bal_acc=0.886 auroc=0.955 (1.06 min; 2.35 h elapsed)
+[145/156] binary_P1_msld_v2_to_msld_v2_rep3 resnet50: bal_acc=0.871 auroc=0.911 (1.49 min; 2.37 h elapsed)
+[146/156] binary_P1_msld_v2_to_msld_v2_rep3 densenet121: bal_acc=0.867 auroc=0.930 (1.25 min; 2.39 h elapsed)
+[147/156] binary_P1_msld_v2_to_msld_v2_rep3 efficientnet_b0: bal_acc=0.742 auroc=0.843 (0.84 min; 2.41 h elapsed)
+[148/156] binary_P1_msld_v2_to_msld_v2_rep3 mobilenetv3_large_100: bal_acc=0.766 auroc=0.810 (0.55 min; 2.42 h elapsed)
+[149/156] binary_P1_msld_v2_to_msld_v2_rep3 convnext_tiny: bal_acc=0.865 auroc=0.927 (1.64 min; 2.44 h elapsed)
+[150/156] binary_P1_msld_v2_to_msld_v2_rep3 vit_small_patch16_224: bal_acc=0.916 auroc=0.977 (0.94 min; 2.46 h elapsed)
+[151/156] binary_P1_msld_v2_to_msld_v2_rep4 resnet50: bal_acc=0.797 auroc=0.897 (1.51 min; 2.49 h elapsed)
+[152/156] binary_P1_msld_v2_to_msld_v2_rep4 densenet121: bal_acc=0.854 auroc=0.923 (1.37 min; 2.51 h elapsed)
+[153/156] binary_P1_msld_v2_to_msld_v2_rep4 efficientnet_b0: bal_acc=0.780 auroc=0.846 (0.73 min; 2.52 h elapsed)
+[154/156] binary_P1_msld_v2_to_msld_v2_rep4 mobilenetv3_large_100: bal_acc=0.778 auroc=0.901 (0.78 min; 2.53 h elapsed)
+[155/156] binary_P1_msld_v2_to_msld_v2_rep4 convnext_tiny: bal_acc=0.789 auroc=0.932 (1.59 min; 2.56 h elapsed)
+[156/156] binary_P1_msld_v2_to_msld_v2_rep4 vit_small_patch16_224: bal_acc=0.893 auroc=0.943 (0.56 min; 2.57 h elapsed)
+Collected 156 finished runs into results/all_runs.csv
+== [05:06:49 UTC, +154 min] 6. summary
+# Results tables (generated by 06_summarize.py)
+
+## Balanced accuracy by protocol
+
+| task | model | protocol | direction | balanced_accuracy_mean | balanced_accuracy_std | auroc_mean | mpox_sensitivity_mean | mpox_specificity_mean | n_runs |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| binary | convnext_tiny | P1 | msid -> msid | 0.943 | 0.042 | 0.982 | 0.914 | 0.971 | 5 |
+| binary | convnext_tiny | P1 | msld_v2 -> msld_v2 | 0.849 | 0.037 | 0.926 | 0.800 | 0.898 | 5 |
+| binary | convnext_tiny | P2 | msid -> msid | 0.924 | 0.016 | 0.983 | 0.929 | 0.918 | 5 |
+| binary | convnext_tiny | P2 | msld_v2 -> msld_v2 | 0.859 | 0.041 | 0.906 | 0.922 | 0.796 | 5 |
+| binary | convnext_tiny | P3 | msid -> msld_v2 | 0.699 | 0.007 | 0.841 | 0.936 | 0.463 | 3 |
+| binary | convnext_tiny | P3 | msld_v2 -> msid | 0.875 | 0.009 | 0.944 | 0.790 | 0.960 | 3 |
+| binary | densenet121 | P1 | msid -> msid | 0.942 | 0.032 | 0.986 | 0.921 | 0.963 | 5 |
+| binary | densenet121 | P1 | msld_v2 -> msld_v2 | 0.848 | 0.034 | 0.921 | 0.848 | 0.847 | 5 |
+| binary | densenet121 | P2 | msid -> msid | 0.921 | 0.016 | 0.985 | 0.928 | 0.914 | 5 |
+| binary | densenet121 | P2 | msld_v2 -> msld_v2 | 0.821 | 0.049 | 0.881 | 0.824 | 0.818 | 5 |
+| binary | densenet121 | P3 | msid -> msld_v2 | 0.680 | 0.004 | 0.812 | 0.932 | 0.428 | 3 |
+| binary | densenet121 | P3 | msld_v2 -> msid | 0.861 | 0.014 | 0.936 | 0.768 | 0.953 | 3 |
+| binary | efficientnet_b0 | P1 | msid -> msid | 0.914 | 0.034 | 0.976 | 0.921 | 0.906 | 5 |
+| binary | efficientnet_b0 | P1 | msld_v2 -> msld_v2 | 0.784 | 0.046 | 0.876 | 0.752 | 0.817 | 5 |
+| binary | efficientnet_b0 | P2 | msid -> msid | 0.918 | 0.037 | 0.981 | 0.913 | 0.922 | 5 |
+| binary | efficientnet_b0 | P2 | msld_v2 -> msld_v2 | 0.774 | 0.072 | 0.849 | 0.767 | 0.780 | 5 |
+| binary | efficientnet_b0 | P3 | msid -> msld_v2 | 0.675 | 0.013 | 0.781 | 0.903 | 0.447 | 3 |
+| binary | efficientnet_b0 | P3 | msld_v2 -> msid | 0.839 | 0.020 | 0.924 | 0.725 | 0.952 | 3 |
+| binary | mobilenetv3_large_100 | P1 | msid -> msid | 0.932 | 0.035 | 0.975 | 0.929 | 0.935 | 5 |
+| binary | mobilenetv3_large_100 | P1 | msld_v2 -> msld_v2 | 0.801 | 0.032 | 0.880 | 0.738 | 0.864 | 5 |
+| binary | mobilenetv3_large_100 | P2 | msid -> msid | 0.900 | 0.044 | 0.976 | 0.857 | 0.944 | 5 |
+| binary | mobilenetv3_large_100 | P2 | msld_v2 -> msld_v2 | 0.767 | 0.074 | 0.858 | 0.777 | 0.758 | 5 |
+| binary | mobilenetv3_large_100 | P3 | msid -> msld_v2 | 0.671 | 0.021 | 0.774 | 0.914 | 0.428 | 3 |
+| binary | mobilenetv3_large_100 | P3 | msld_v2 -> msid | 0.830 | 0.020 | 0.914 | 0.717 | 0.942 | 3 |
+| binary | resnet50 | P1 | msid -> msid | 0.941 | 0.030 | 0.988 | 0.943 | 0.939 | 5 |
+| binary | resnet50 | P1 | msld_v2 -> msld_v2 | 0.812 | 0.048 | 0.890 | 0.862 | 0.762 | 5 |
+| binary | resnet50 | P2 | msid -> msid | 0.916 | 0.012 | 0.974 | 0.913 | 0.918 | 5 |
+| binary | resnet50 | P2 | msld_v2 -> msld_v2 | 0.768 | 0.084 | 0.848 | 0.777 | 0.759 | 5 |
+| binary | resnet50 | P3 | msid -> msld_v2 | 0.664 | 0.018 | 0.792 | 0.951 | 0.378 | 3 |
+| binary | resnet50 | P3 | msld_v2 -> msid | 0.816 | 0.069 | 0.924 | 0.667 | 0.965 | 3 |
+| binary | vit_small_patch16_224 | P1 | msid -> msid | 0.956 | 0.017 | 0.991 | 0.957 | 0.955 | 5 |
+| binary | vit_small_patch16_224 | P1 | msld_v2 -> msld_v2 | 0.896 | 0.023 | 0.957 | 0.855 | 0.936 | 5 |
+| binary | vit_small_patch16_224 | P2 | msid -> msid | 0.932 | 0.015 | 0.987 | 0.906 | 0.959 | 5 |
+| binary | vit_small_patch16_224 | P2 | msld_v2 -> msld_v2 | 0.843 | 0.039 | 0.924 | 0.862 | 0.823 | 5 |
+| binary | vit_small_patch16_224 | P3 | msid -> msld_v2 | 0.741 | 0.027 | 0.852 | 0.920 | 0.562 | 3 |
+| binary | vit_small_patch16_224 | P3 | msld_v2 -> msid | 0.895 | 0.010 | 0.959 | 0.817 | 0.973 | 3 |
+
+## Inflation and generalization gap (balanced accuracy)
+
+| task | model | train_dataset | P1_naive | P2_patient | P3_cross | P3_direction | inflation_P1_minus_P2 | gap_P2_minus_P3 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| binary | convnext_tiny | msid | 0.943 | 0.924 | 0.699 | msid -> msld_v2 | 0.019 | 0.224 |
+| binary | convnext_tiny | msld_v2 | 0.849 | 0.859 | 0.875 | msld_v2 -> msid | -0.010 | -0.016 |
+| binary | densenet121 | msid | 0.942 | 0.921 | 0.680 | msid -> msld_v2 | 0.021 | 0.241 |
+| binary | densenet121 | msld_v2 | 0.848 | 0.821 | 0.861 | msld_v2 -> msid | 0.027 | -0.040 |
+| binary | efficientnet_b0 | msid | 0.914 | 0.918 | 0.675 | msid -> msld_v2 | -0.004 | 0.242 |
+| binary | efficientnet_b0 | msld_v2 | 0.784 | 0.774 | 0.839 | msld_v2 -> msid | 0.011 | -0.065 |
+| binary | mobilenetv3_large_100 | msid | 0.932 | 0.900 | 0.671 | msid -> msld_v2 | 0.032 | 0.229 |
+| binary | mobilenetv3_large_100 | msld_v2 | 0.801 | 0.767 | 0.830 | msld_v2 -> msid | 0.034 | -0.063 |
+| binary | resnet50 | msid | 0.941 | 0.916 | 0.664 | msid -> msld_v2 | 0.025 | 0.251 |
+| binary | resnet50 | msld_v2 | 0.812 | 0.768 | 0.816 | msld_v2 -> msid | 0.044 | -0.048 |
+| binary | vit_small_patch16_224 | msid | 0.956 | 0.932 | 0.741 | msid -> msld_v2 | 0.024 | 0.191 |
+| binary | vit_small_patch16_224 | msld_v2 | 0.896 | 0.843 | 0.895 | msld_v2 -> msid | 0.053 | -0.053 |
+
+## Skin-tone (ITA band) breakdown, pooled over reps
+
+| task | protocol | model | test_dataset | ita_band | n_mpox | n_other | sensitivity | specificity |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| binary | P2 | convnext_tiny | msid | dark | 65 | 35 | 0.954 | 0.886 |
+| binary | P2 | convnext_tiny | msid | intermediate | 37 | 43 | 0.919 | 0.907 |
+| binary | P2 | convnext_tiny | msid | light | 36 | 167 | 0.889 | 0.928 |
+| binary | P2 | convnext_tiny | msid | unknown | 1 | 0 | 1.000 | nan |
+| binary | P2 | convnext_tiny | msld_v2 | dark | 68 | 50 | 0.985 | 0.760 |
+| binary | P2 | convnext_tiny | msld_v2 | intermediate | 20 | 67 | 0.800 | 0.746 |
+| binary | P2 | convnext_tiny | msld_v2 | light | 37 | 122 | 0.865 | 0.828 |
+| binary | P2 | densenet121 | msid | dark | 65 | 35 | 0.969 | 0.800 |
+| binary | P2 | densenet121 | msid | intermediate | 37 | 43 | 0.946 | 0.860 |
+| binary | P2 | densenet121 | msid | light | 36 | 167 | 0.833 | 0.952 |
+| binary | P2 | densenet121 | msid | unknown | 1 | 0 | 1.000 | nan |
+| binary | P2 | densenet121 | msld_v2 | dark | 68 | 50 | 0.853 | 0.840 |
+| binary | P2 | densenet121 | msld_v2 | intermediate | 20 | 67 | 0.800 | 0.731 |
+| binary | P2 | densenet121 | msld_v2 | light | 37 | 122 | 0.730 | 0.852 |
+| binary | P2 | efficientnet_b0 | msid | dark | 65 | 35 | 0.969 | 0.914 |
+| binary | P2 | efficientnet_b0 | msid | intermediate | 37 | 43 | 0.892 | 0.884 |
+| binary | P2 | efficientnet_b0 | msid | light | 36 | 167 | 0.833 | 0.934 |
+| binary | P2 | efficientnet_b0 | msid | unknown | 1 | 0 | 1.000 | nan |
+| binary | P2 | efficientnet_b0 | msld_v2 | dark | 68 | 50 | 0.809 | 0.660 |
+| binary | P2 | efficientnet_b0 | msld_v2 | intermediate | 20 | 67 | 0.800 | 0.761 |
+| binary | P2 | efficientnet_b0 | msld_v2 | light | 37 | 122 | 0.622 | 0.836 |
+| binary | P2 | mobilenetv3_large_100 | msid | dark | 65 | 35 | 0.938 | 0.914 |
+| binary | P2 | mobilenetv3_large_100 | msid | intermediate | 37 | 43 | 0.811 | 0.907 |
+| binary | P2 | mobilenetv3_large_100 | msid | light | 36 | 167 | 0.750 | 0.958 |
+| binary | P2 | mobilenetv3_large_100 | msid | unknown | 1 | 0 | 1.000 | nan |
+| binary | P2 | mobilenetv3_large_100 | msld_v2 | dark | 68 | 50 | 0.838 | 0.720 |
+| binary | P2 | mobilenetv3_large_100 | msld_v2 | intermediate | 20 | 67 | 0.650 | 0.701 |
+| binary | P2 | mobilenetv3_large_100 | msld_v2 | light | 37 | 122 | 0.676 | 0.795 |
+| binary | P2 | resnet50 | msid | dark | 65 | 35 | 0.969 | 0.800 |
+| binary | P2 | resnet50 | msid | intermediate | 37 | 43 | 0.919 | 0.907 |
+| binary | P2 | resnet50 | msid | light | 36 | 167 | 0.806 | 0.946 |
+| binary | P2 | resnet50 | msid | unknown | 1 | 0 | 1.000 | nan |
+| binary | P2 | resnet50 | msld_v2 | dark | 68 | 50 | 0.868 | 0.680 |
+| binary | P2 | resnet50 | msld_v2 | intermediate | 20 | 67 | 0.750 | 0.716 |
+| binary | P2 | resnet50 | msld_v2 | light | 37 | 122 | 0.568 | 0.803 |
+| binary | P2 | vit_small_patch16_224 | msid | dark | 65 | 35 | 0.969 | 0.914 |
+| binary | P2 | vit_small_patch16_224 | msid | intermediate | 37 | 43 | 0.919 | 0.977 |
+| binary | P2 | vit_small_patch16_224 | msid | light | 36 | 167 | 0.778 | 0.964 |
+| binary | P2 | vit_small_patch16_224 | msid | unknown | 1 | 0 | 1.000 | nan |
+| binary | P2 | vit_small_patch16_224 | msld_v2 | dark | 68 | 50 | 0.971 | 0.760 |
+| binary | P2 | vit_small_patch16_224 | msld_v2 | intermediate | 20 | 67 | 0.750 | 0.761 |
+| binary | P2 | vit_small_patch16_224 | msld_v2 | light | 37 | 122 | 0.730 | 0.869 |
+| binary | P3 | convnext_tiny | msid | dark | 300 | 189 | 0.917 | 0.921 |
+| binary | P3 | convnext_tiny | msid | intermediate | 192 | 240 | 0.792 | 0.942 |
+| binary | P3 | convnext_tiny | msid | light | 222 | 990 | 0.599 | 0.972 |
+| binary | P3 | convnext_tiny | msid | unknown | 18 | 0 | 1.000 | nan |
+| binary | P3 | convnext_tiny | msld_v2 | dark | 306 | 294 | 0.984 | 0.361 |
+| binary | P3 | convnext_tiny | msld_v2 | intermediate | 204 | 372 | 0.902 | 0.457 |
+| binary | P3 | convnext_tiny | msld_v2 | light | 243 | 702 | 0.905 | 0.509 |
+| binary | P3 | densenet121 | msid | dark | 300 | 189 | 0.900 | 0.942 |
+| binary | P3 | densenet121 | msid | intermediate | 192 | 240 | 0.766 | 0.942 |
+| binary | P3 | densenet121 | msid | light | 222 | 990 | 0.572 | 0.959 |
+| binary | P3 | densenet121 | msid | unknown | 18 | 0 | 1.000 | nan |
+| binary | P3 | densenet121 | msld_v2 | dark | 306 | 294 | 0.951 | 0.350 |
+| binary | P3 | densenet121 | msld_v2 | intermediate | 204 | 372 | 0.887 | 0.433 |
+| binary | P3 | densenet121 | msld_v2 | light | 243 | 702 | 0.947 | 0.459 |
+| binary | P3 | efficientnet_b0 | msid | dark | 300 | 189 | 0.843 | 0.926 |
+| binary | P3 | efficientnet_b0 | msid | intermediate | 192 | 240 | 0.729 | 0.925 |
+| binary | P3 | efficientnet_b0 | msid | light | 222 | 990 | 0.563 | 0.964 |
+| binary | P3 | efficientnet_b0 | msid | unknown | 18 | 0 | 0.722 | nan |
+| binary | P3 | efficientnet_b0 | msld_v2 | dark | 306 | 294 | 0.931 | 0.408 |
+| binary | P3 | efficientnet_b0 | msld_v2 | intermediate | 204 | 372 | 0.892 | 0.417 |
+| binary | P3 | efficientnet_b0 | msld_v2 | light | 243 | 702 | 0.877 | 0.480 |
+| binary | P3 | mobilenetv3_large_100 | msid | dark | 300 | 189 | 0.827 | 0.937 |
+| binary | P3 | mobilenetv3_large_100 | msid | intermediate | 192 | 240 | 0.667 | 0.917 |
+| binary | P3 | mobilenetv3_large_100 | msid | light | 222 | 990 | 0.590 | 0.949 |
+| binary | P3 | mobilenetv3_large_100 | msid | unknown | 18 | 0 | 1.000 | nan |
+| binary | P3 | mobilenetv3_large_100 | msld_v2 | dark | 306 | 294 | 0.944 | 0.344 |
+| binary | P3 | mobilenetv3_large_100 | msld_v2 | intermediate | 204 | 372 | 0.882 | 0.425 |
+| binary | P3 | mobilenetv3_large_100 | msld_v2 | light | 243 | 702 | 0.901 | 0.464 |
+| binary | P3 | resnet50 | msid | dark | 300 | 189 | 0.813 | 0.926 |
+| binary | P3 | resnet50 | msid | intermediate | 192 | 240 | 0.599 | 0.963 |
+| binary | P3 | resnet50 | msid | light | 222 | 990 | 0.509 | 0.974 |
+| binary | P3 | resnet50 | msid | unknown | 18 | 0 | 0.889 | nan |
+| binary | P3 | resnet50 | msld_v2 | dark | 306 | 294 | 0.974 | 0.269 |
+| binary | P3 | resnet50 | msld_v2 | intermediate | 204 | 372 | 0.936 | 0.390 |
+| binary | P3 | resnet50 | msld_v2 | light | 243 | 702 | 0.934 | 0.417 |
+| binary | P3 | vit_small_patch16_224 | msid | dark | 300 | 189 | 0.943 | 0.952 |
+| binary | P3 | vit_small_patch16_224 | msid | intermediate | 192 | 240 | 0.812 | 0.963 |
+| binary | P3 | vit_small_patch16_224 | msid | light | 222 | 990 | 0.640 | 0.980 |
+| binary | P3 | vit_small_patch16_224 | msid | unknown | 18 | 0 | 0.944 | nan |
+| binary | P3 | vit_small_patch16_224 | msld_v2 | dark | 306 | 294 | 0.958 | 0.497 |
+| binary | P3 | vit_small_patch16_224 | msld_v2 | intermediate | 204 | 372 | 0.863 | 0.530 |
+| binary | P3 | vit_small_patch16_224 | msld_v2 | light | 243 | 702 | 0.922 | 0.607 |
+
+== [05:06:51 UTC, +154 min] 7. Grad-CAM
+/kaggle/working/mpox-generalization/scripts/07_gradcam.py:57: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  pick = pred.groupby("kind", group_keys=False).apply(lambda g: g.sample(min(len(g), a.n // 4), random_state=0))
+Wrote 24 Grad-CAM images to results/binary_P3_msid_to_msld_v2_rep0/resnet50/gradcam/ - fill the 'attention' column by eye.
+/kaggle/working/mpox-generalization/scripts/07_gradcam.py:57: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  pick = pred.groupby("kind", group_keys=False).apply(lambda g: g.sample(min(len(g), a.n // 4), random_state=0))
+Wrote 24 Grad-CAM images to results/binary_P3_msld_v2_to_msid_rep0/resnet50/gradcam/ - fill the 'attention' column by eye.
+/kaggle/working/mpox-generalization/scripts/07_gradcam.py:57: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  pick = pred.groupby("kind", group_keys=False).apply(lambda g: g.sample(min(len(g), a.n // 4), random_state=0))
+Wrote 21 Grad-CAM images to results/binary_P3_msid_to_msld_v2_rep0/convnext_tiny/gradcam/ - fill the 'attention' column by eye.
+/kaggle/working/mpox-generalization/scripts/07_gradcam.py:57: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  pick = pred.groupby("kind", group_keys=False).apply(lambda g: g.sample(min(len(g), a.n // 4), random_state=0))
+Wrote 24 Grad-CAM images to results/binary_P3_msld_v2_to_msid_rep0/convnext_tiny/gradcam/ - fill the 'attention' column by eye.
+== [05:08:04 UTC, +155 min] 8. package outputs
+== [05:08:05 UTC, +155 min] DONE. Key files in /kaggle/working/key_results ; everything in /kaggle/working/outputs.zip

@@ -1,0 +1,5 @@
+Method,MSID → MSLD v2.0: bal. acc.,MSID → MSLD v2.0: spec.,MSID → MSLD v2.0: sens.,MSLD v2.0 → MSID: bal. acc.,MSLD v2.0 → MSID: spec.,MSLD v2.0 → MSID: sens.,Mean bal. acc. (both),n runs
+ERM (standard fine-tuning),0.701 ± 0.045,0.476 ± 0.109,0.926 ± 0.032,0.849 ± 0.028,0.968 ± 0.015,0.731 ± 0.048,0.775 ± 0.085,18
+Look-alike exposure only,0.744 ± 0.030,0.633 ± 0.084,0.855 ± 0.059,0.852 ± 0.020,0.955 ± 0.032,0.749 ± 0.026,0.798 ± 0.061,18
+Random-negative control,0.757 ± 0.020,0.673 ± 0.088,0.842 ± 0.076,0.849 ± 0.020,0.965 ± 0.019,0.733 ± 0.044,0.803 ± 0.051,18
+TALE (proposed),0.752 ± 0.026,0.653 ± 0.096,0.852 ± 0.070,0.842 ± 0.020,0.967 ± 0.023,0.717 ± 0.048,0.797 ± 0.052,18

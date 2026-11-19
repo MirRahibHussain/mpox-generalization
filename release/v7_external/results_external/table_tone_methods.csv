@@ -1,0 +1,7 @@
+Method,Sens. dark,Sens. light,Sens. gap (dark-light),Worst-band sens.,Spec. dark,Spec. light,Spec. gap (dark-light)
+ERM (standard fine-tuning),0.859,0.581,+0.278,0.581,0.400,0.514,-0.114
+Random-negative control,0.849,0.563,+0.286,0.563,0.553,0.651,-0.097
+"Atlas negatives, flat head",0.841,0.529,+0.313,0.529,0.584,0.679,-0.095
+HOD (Roy et al. 2022),0.823,0.551,+0.272,0.551,0.637,0.712,-0.075
+FACTOR without tone matching,0.850,0.581,+0.269,0.580,0.560,0.647,-0.087
+FACTOR (proposed),0.851,0.583,+0.269,0.583,0.536,0.622,-0.086

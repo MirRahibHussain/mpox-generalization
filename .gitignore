@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+# generated outputs (share results via releases, not git)
+data/
+splits/
+results/
+results_smoke/
+*.pt
+*.npy
+outputs.zip
+tests/_*
+# released split files and per-image predictions are tracked
+!release/**/splits/
+!release/**/results/

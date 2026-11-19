@@ -1,0 +1,8 @@
+Method,Sens. dark,Sens. light,Sens. gap (dark-light),Worst-band sens.,Spec. dark,Spec. light,Spec. gap (dark-light)
+ERM (standard fine-tuning),0.882,0.590,+0.292,0.590,0.392,0.525,-0.132
+Colour jitter (hue/saturation),0.890,0.589,+0.301,0.589,0.397,0.543,-0.146
+Mixup,0.864,0.557,+0.307,0.557,0.426,0.564,-0.138
+Group DRO,0.853,0.619,+0.235,0.619,0.418,0.470,-0.052
+Look-alike exposure only,0.864,0.557,+0.307,0.557,0.561,0.659,-0.097
+Tone balancing + tone shift only,0.849,0.563,+0.286,0.563,0.458,0.541,-0.083
+TALE (proposed),0.836,0.518,+0.318,0.518,0.613,0.656,-0.043

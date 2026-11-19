@@ -1,0 +1,11 @@
+dataset,label,dark,intermediate,light,unknown
+msid,chickenpox,7,16,83,0
+msid,healthy,32,45,215,0
+msid,measles,29,22,39,0
+msid,mpox,116,67,88,6
+msld_v2,chickenpox,12,22,40,0
+msld_v2,cowpox,16,22,28,0
+msld_v2,healthy,30,33,51,0
+msld_v2,hfmd,31,43,87,0
+msld_v2,measles,12,8,35,0
+msld_v2,mpox,119,70,95,0

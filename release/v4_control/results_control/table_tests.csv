@@ -1,0 +1,7 @@
+Comparison,pairs,mean diff,wins,Wilcoxon p
+TALE (proposed) vs ERM (standard fine-tuning),18,+0.022,11,0.0495
+TALE (proposed) vs Look-alike exposure only,18,-0.001,7,0.5226
+TALE (proposed) vs Random-negative control,18,-0.006,6,0.2121
+Look-alike exposure only vs ERM (standard fine-tuning),18,+0.023,11,0.0483
+Random-negative control vs ERM (standard fine-tuning),18,+0.028,11,0.0483
+Look-alike exposure only vs Random-negative control,18,-0.005,6,0.5226

@@ -1,0 +1,3 @@
+Method,msid P2 bal. acc.,msld_v2 P2 bal. acc.
+ERM (standard fine-tuning),0.929 ± 0.025,0.800 ± 0.071
+TALE (proposed),0.904 ± 0.033,0.820 ± 0.042

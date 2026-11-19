@@ -1,0 +1,4 @@
+scope,images,images_in_duplicate_groups,pairs,label_mismatch_pairs
+msid,765.0,76,18,1
+msld_v2,754.0,51,3,0
+cross-dataset,,95,67,0

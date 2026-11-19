@@ -1,0 +1,9 @@
+Comparison,pairs,mean diff,wins,Wilcoxon p
+TALE (proposed) vs ERM (standard fine-tuning),18,+0.012,8,0.4951
+TALE (proposed) vs Colour jitter (hue/saturation),18,+0.009,9,0.4171
+TALE (proposed) vs Mixup,18,+0.018,11,0.0304
+TALE (proposed) vs Group DRO,18,+0.021,11,0.1187
+TALE (proposed) vs Look-alike exposure only,18,-0.009,5,0.0385
+TALE (proposed) vs Tone balancing + tone shift only,18,+0.022,13,0.0483
+Look-alike exposure only vs ERM (standard fine-tuning),18,+0.021,12,0.0665
+Tone balancing + tone shift only vs ERM (standard fine-tuning),18,-0.010,7,0.2462

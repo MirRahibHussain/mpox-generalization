@@ -1,0 +1,5 @@
+Method,Sens. dark,Sens. light,Sens. gap (dark-light),Worst-band sens.,Spec. dark,Spec. light,Spec. gap (dark-light)
+ERM (standard fine-tuning),0.859,0.553,+0.306,0.553,0.405,0.512,-0.107
+Look-alike exposure only,0.868,0.592,+0.276,0.592,0.551,0.669,-0.118
+Random-negative control,0.857,0.544,+0.313,0.544,0.602,0.708,-0.106
+TALE (proposed),0.851,0.542,+0.309,0.542,0.621,0.676,-0.054
